@@ -29,7 +29,7 @@ sealed trait Route[Req, Resp] extends Routes.NonEmpty[Req, Resp] {
 
   val spec: PathSpec[RouteElems]
   final val specLinearization = spec.linearization
-  def guarded: Boolean
+  def isGuarded: Boolean
   def checkGuard(args: RouteArgs): Option[() => Resp]
 
   private[routineer] val straight: Routes[Req, Resp] =
@@ -57,7 +57,7 @@ sealed trait Route[Req, Resp] extends Routes.NonEmpty[Req, Resp] {
           case None => linearStr
         }
       }
-    if (guarded)
+    if (isGuarded)
       specStr + " (guarded)"
     else
       specStr
@@ -69,7 +69,7 @@ final case class SimpleRoute[Req, Resp, Elems <: PathSpec.Elems](
                    implicit ops: PathSpec.ElemsOps[Elems#Prepend[Req]])
                  extends Route[Req, Resp] {
   type RouteElems = Elems
-  def guarded = false
+  def isGuarded = false
   def checkGuard(args: RouteArgs) =
     Some(() => ops.apply(body, args))
 }
@@ -80,7 +80,7 @@ final case class CondRoute[Req, Resp, Elems <: PathSpec.Elems](
                    implicit ops: PathSpec.ElemsOps[Elems#Prepend[Req]])
                  extends Route[Req, Resp] {
   type RouteElems = Elems
-  def guarded = true
+  def isGuarded = true
   def checkGuard(args: RouteArgs) = {
     if (ops.apply(cond, args))
       Some(() => ops.apply(body, args))
@@ -97,7 +97,7 @@ final case class GuardedRoute[Req, Resp, Elems <: PathSpec.Elems, G](
                                          Elems#Prepend[Req]#Append[G]])
                  extends Route[Req, Resp] {
   type RouteElems = Elems
-  def guarded = true
+  def isGuarded = true
   def checkGuard(args: RouteArgs) = {
     prepOps.apply(guard, args).map { extra =>
       () => prepApOps.apply(body, prepOps.appendArg(args, extra))
@@ -239,7 +239,8 @@ object Routes {
                    extends NonEmpty[Req, Resp] {
     def ++(routes1: Routes[Req, Resp]) = routes1 match {
       case _: Empty[_, _] => this
-      case route: Route[_, _] => this ++ route.asInstanceOf[Route[Req, Resp]].straight
+      case route: Route[_, _] =>
+        this ++ route.asInstanceOf[Route[Req, Resp]].straight
       case Prefixed(prefix1, routes1: Routes[_, _]) =>
         if (prefix1 == prefix)
           Prefixed(prefix, routes ++ routes1)
@@ -290,7 +291,8 @@ object Routes {
                    extends NonEmpty[Req, Resp] {
     def ++(routes1: Routes[Req, Resp]) = routes1 match {
       case _: Empty[_, _] => this
-      case route: Route[_, _] => this ++ route.asInstanceOf[Route[Req, Resp]].straight
+      case route: Route[_, _] =>
+        this ++ route.asInstanceOf[Route[Req, Resp]].straight
       case Prefixed(prefix1, routes1) => prefix.headOption match {
         case Some(Left(str)) =>
           if (str == prefix1)
@@ -315,7 +317,7 @@ object Routes {
         (prefix.headOption, prefix1.headOption) match {
           case (None, None) => (end.spec.rest, end1.spec.rest) match {
             case (None, None) =>
-              if (!end.guarded)
+              if (!end.isGuarded)
                 throw new RouteOvershadowedException(end1, end)
               Choice(ends = Vector(end, end1))
             case (None, Some(pat1)) =>
@@ -330,7 +332,7 @@ object Routes {
               val pair = pat -> end
               val pair1 = pat1 -> end1
               if (pat == pat1) {
-                if (!end.guarded)
+                if (!end.isGuarded)
                   throw new RouteOvershadowedException(end1, end)
                 Choice(restMap = Map(pair1), restSeq = Vector(pair, pair1))
               } else
@@ -423,7 +425,7 @@ object Routes {
         case None => end.spec.rest match {
           case Some(pat) =>
             choice.restMap.get(pat).foreach { end1 =>
-              if (!end.guarded)
+              if (!end.isGuarded)
                 throw new RouteOvershadowedException(end1, end)
             }
             val pair = pat -> end
@@ -431,7 +433,7 @@ object Routes {
                         restSeq = choice.restSeq :+ pair)
           case None =>
             choice.ends.lastOption.foreach { end1 =>
-              if (!end.guarded)
+              if (!end.isGuarded)
                 throw new RouteOvershadowedException(end1, end)
             }
             choice.copy(ends = choice.ends :+ end)
@@ -525,14 +527,14 @@ object Routes {
         case None => end1.spec.rest match {
           case Some(pat1) =>
             restMap.get(pat1).foreach { end =>
-              if (!end.guarded)
+              if (!end.isGuarded)
                 throw new RouteOvershadowedException(end1, end)
             }
             val pair1 = pat1 -> end1
             copy(restMap = restMap + pair1, restSeq = restSeq :+ pair1)
           case None =>
             ends.lastOption.foreach { end =>
-              if (!end.guarded)
+              if (!end.isGuarded)
                 throw new RouteOvershadowedException(end1, end)
             }
             copy(ends = ends :+ end1)
@@ -558,7 +560,7 @@ object Routes {
           choice.restSeq.foldLeft((restMap, restSeq)) {
             case ((m, s), (pat1, end1)) =>
               m.get(pat1).foreach { end =>
-                if (!end.guarded)
+                if (!end.isGuarded)
                   throw new RouteOvershadowedException(end1, end)
               }
               val pair1 = pat1 -> end1
@@ -569,7 +571,7 @@ object Routes {
             ends
           else {
             ends.lastOption.foreach { end =>
-              if (!end.guarded)
+              if (!end.isGuarded)
                 throw new RouteOvershadowedException(choice.ends.head, end)
             }
             ends ++ choice.ends
@@ -579,9 +581,9 @@ object Routes {
                restMap = newRestMap, restSeq = newRestSeq,
                ends = newEnds)
     }
-    protected[routineer] def apply(evaluator: PatternEvaluator,
-                                   path: Path,
-                                   args: Seq[Any]): Option[() => Resp] = path match {
+    protected[routineer] def apply(
+        evaluator: PatternEvaluator, path: Path,
+        args: Seq[Any]): Option[() => Resp] = path match {
       case Path.Empty =>    
         ends.foreach { end =>
           val result = end.checkGuard(
