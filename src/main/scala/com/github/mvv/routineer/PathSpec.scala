@@ -50,7 +50,7 @@ object PathSpec {
     type HasNext <: TBool
     type Prepend[_] <: Elems
     type Append[_] <: Elems
-    type Func[_]
+    type Func[+_]
     def linearization: Seq[Either[String, Pattern[String, _]]]
   }
   sealed class Elems0 extends Elems {
@@ -58,7 +58,7 @@ object PathSpec {
     type HasNext = TTrue
     type Prepend[H] = Elems1[H]
     type Append[L] = Elems1[L]
-    type Func[R] = Unit => R
+    type Func[+R] = Unit => R
     def linearization = Seq.empty
   }
   val Elems0 = new Elems0
@@ -75,7 +75,7 @@ object PathSpec {
     type HasNext = TTrue
     type Prepend[H] = Elems2[H, A]
     type Append[L] = Elems2[A, L]
-    type Func[R] = A => R
+    type Func[+R] = A => R
     def linearization = _1.linearization
   }
   final class ElemsOps1[A]() extends ElemsOps[Elems1[A]] {
@@ -91,7 +91,7 @@ object PathSpec {
     type HasNext = TTrue
     type Prepend[H] = Elems3[H, A, B]
     type Append[L] = Elems3[A, B, L]
-    type Func[R] = (A, B) => R
+    type Func[+R] = (A, B) => R
     def linearization = _1.linearization ++ _2.linearization
   }
   final class ElemsOps2[A, B]() extends ElemsOps[Elems2[A, B]] {
@@ -110,7 +110,7 @@ object PathSpec {
     type HasNext = TTrue
     type Prepend[H] = Elems4[H, A, B, C]
     type Append[L] = Elems4[A, B, C, L]
-    type Func[R] = (A, B, C) => R
+    type Func[+R] = (A, B, C) => R
     def linearization = _1.linearization ++ _2.linearization ++ _3.linearization
   }
   final class ElemsOps3[A, B, C]() extends ElemsOps[Elems3[A, B, C]] {
@@ -130,7 +130,7 @@ object PathSpec {
     type HasNext = TTrue
     type Prepend[H] = Elems5[H, A, B, C, D]
     type Append[L] = Elems5[A, B, C, D, L]
-    type Func[R] = (A, B, C, D) => R
+    type Func[+R] = (A, B, C, D) => R
     def linearization = _1.linearization ++ _2.linearization ++
                         _3.linearization ++ _4.linearization
   }
@@ -155,7 +155,7 @@ object PathSpec {
     type HasNext = TFalse
     type Prepend[N] = Elems5[A, B, C, D, E]
     type Append[N] = Elems5[A, B, C, D, E]
-    type Func[R] = (A, B, C, D, E) => R
+    type Func[+R] = (A, B, C, D, E) => R
     def linearization = _1.linearization ++ _2.linearization ++
                         _3.linearization ++ _4.linearization ++
                         _5.linearization

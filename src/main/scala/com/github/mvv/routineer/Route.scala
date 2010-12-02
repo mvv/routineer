@@ -23,7 +23,7 @@ case class RouteOvershadowedException[Req, Resp](
     "Route [ " + route + " ] is overshadowed by route [ " + by + " ]"
 }
 
-sealed trait Route[Req, Resp] extends Routes.NonEmpty[Req, Resp] {
+sealed trait Route[Req, +Resp] extends Routes.NonEmpty[Req, Resp] {
   type RouteElems <: PathSpec.Elems
   final type RouteArgs = RouteElems#Prepend[Req]#Args
 
@@ -35,7 +35,7 @@ sealed trait Route[Req, Resp] extends Routes.NonEmpty[Req, Resp] {
   private[routineer] val straight: Routes[Req, Resp] =
     Routes.Straight(specLinearization, this)
 
-  final def ++(routes: Routes[Req, Resp]) = straight ++ routes
+  final def ++[Resp1 >: Resp](routes: Routes[Req, Resp1]) = straight ++ routes
   protected[routineer] def apply(evaluator: Routes.PatternEvaluator,
                                  path: Routes.Path, args: Seq[Any]) =
     straight(evaluator, path, args)
@@ -63,7 +63,7 @@ sealed trait Route[Req, Resp] extends Routes.NonEmpty[Req, Resp] {
       specStr
   }
 }
-final case class SimpleRoute[Req, Resp, Elems <: PathSpec.Elems](
+final case class SimpleRoute[Req, +Resp, Elems <: PathSpec.Elems](
                    spec: PathSpec[Elems],
                    body: Elems#Prepend[Req]#Func[Resp])(
                    implicit ops: PathSpec.ElemsOps[Elems#Prepend[Req]])
@@ -73,7 +73,7 @@ final case class SimpleRoute[Req, Resp, Elems <: PathSpec.Elems](
   def checkGuard(args: RouteArgs) =
     Some(() => ops.apply(body, args))
 }
-final case class CondRoute[Req, Resp, Elems <: PathSpec.Elems](
+final case class CondRoute[Req, +Resp, Elems <: PathSpec.Elems](
                    spec: PathSpec[Elems],
                    cond: Elems#Prepend[Req]#Func[Boolean],
                    body: Elems#Prepend[Req]#Func[Resp])(
@@ -88,7 +88,7 @@ final case class CondRoute[Req, Resp, Elems <: PathSpec.Elems](
       None
   }
 }
-final case class GuardedRoute[Req, Resp, Elems <: PathSpec.Elems, G](
+final case class GuardedRoute[Req, +Resp, Elems <: PathSpec.Elems, G](
                    spec: PathSpec[Elems],
                    guard: Elems#Prepend[Req]#Func[Option[G]],
                    body: Elems#Prepend[Req]#Append[G]#Func[Resp])(
@@ -105,10 +105,10 @@ final case class GuardedRoute[Req, Resp, Elems <: PathSpec.Elems, G](
   }
 }
 
-sealed trait Routes[Req, Resp] {
+sealed trait Routes[Req, +Resp] {
   def isEmpty: Boolean
   def /:(str: String): Routes[Req, Resp]
-  def ++(routes: Routes[Req, Resp]): Routes[Req, Resp]
+  def ++[Resp1 >: Resp](routes: Routes[Req, Resp1]): Routes[Req, Resp1]
   protected[routineer] def apply(evaluator: Routes.PatternEvaluator,
                                  path: Routes.Path,
                                  args: Seq[Any]): Option[() => Resp]
@@ -217,10 +217,10 @@ object Routes {
       }
   }
 
-  final class Empty[Req, Resp]() extends Routes[Req, Resp] {
+  final class Empty[Req, +Resp]() extends Routes[Req, Resp] {
     def isEmpty = true
     def /:(str: String) = this
-    def ++(routes: Routes[Req, Resp]) = routes
+    def ++[Resp1 >: Resp](routes: Routes[Req, Resp1]) = routes
     protected[routineer] def apply(evaluator: PatternEvaluator,
                                    path: Path, args: Seq[Any]) = None
   }
@@ -229,19 +229,20 @@ object Routes {
   def apply[Req, Resp](routes: Route[Req, Resp]*): Routes[Req, Resp] =
     routes.foldLeft(empty[Req, Resp])(_ ++ _)
 
-  sealed trait NonEmpty[Req, Resp] extends Routes[Req, Resp] {
+  sealed trait NonEmpty[Req, +Resp] extends Routes[Req, Resp] {
     final def isEmpty = true
     final def /:(str: String) = new Prefixed(str, this)
   }
 
-  final case class Prefixed[Req, Resp](
+  final case class Prefixed[Req, +Resp](
                      prefix: String, routes: Routes[Req, Resp])
                    extends NonEmpty[Req, Resp] {
-    def ++(routes1: Routes[Req, Resp]) = routes1 match {
+    def ++[Resp1 >: Resp](routes1: Routes[Req, Resp1]) = routes1 match {
       case _: Empty[_, _] => this
       case route: Route[_, _] =>
-        this ++ route.asInstanceOf[Route[Req, Resp]].straight
-      case Prefixed(prefix1, routes1: Routes[_, _]) =>
+        this ++ route.asInstanceOf[Route[Req, Resp1]].straight
+      case Prefixed(prefix1, _routes1: Routes[_, _]) =>
+        val routes1 = _routes1.asInstanceOf[Routes[Req, Resp1]]
         if (prefix1 == prefix)
           Prefixed(prefix, routes ++ routes1)
         else
@@ -267,13 +268,15 @@ object Routes {
                    ends = Vector(end1))
         }
       }
-      case choice: Choice[_, _] => choice.stringMap.get(prefix) match {
-        case Some(routes1) =>
-          choice.copy(stringMap = choice.stringMap +
-                                  (prefix -> (routes ++ routes1)))
-        case None =>
-          choice.copy(stringMap = choice.stringMap + (prefix -> routes))
-      }
+      case _choice: Choice[_, _] =>
+        val choice = _choice.asInstanceOf[Choice[Req, Resp1]]
+        choice.stringMap.get(prefix) match {
+          case Some(routes1) =>
+            choice.copy(stringMap = choice.stringMap +
+                                    (prefix -> (routes ++ routes1)))
+          case None =>
+            choice.copy(stringMap = choice.stringMap + (prefix -> routes))
+        }
     }
     protected[routineer] def apply(evaluator: PatternEvaluator,
                                    path: Path, args: Seq[Any]) =
@@ -285,14 +288,14 @@ object Routes {
       }
   }
 
-  final case class Straight[Req, Resp](
+  final case class Straight[Req, +Resp](
                      prefix: Seq[Either[String, Pattern[String, _]]],
                      end: Route[Req, Resp])
                    extends NonEmpty[Req, Resp] {
-    def ++(routes1: Routes[Req, Resp]) = routes1 match {
+    def ++[Resp1 >: Resp](routes1: Routes[Req, Resp1]) = routes1 match {
       case _: Empty[_, _] => this
       case route: Route[_, _] =>
-        this ++ route.asInstanceOf[Route[Req, Resp]].straight
+        this ++ route.asInstanceOf[Route[Req, Resp1]].straight
       case Prefixed(prefix1, routes1) => prefix.headOption match {
         case Some(Left(str)) =>
           if (str == prefix1)
@@ -404,41 +407,43 @@ object Routes {
               Choice(patternMap = Map(pair, pair1),
                      patternSeq = Vector(pair, pair1))
         }
-      case choice: Choice[_, _] => prefix.headOption match {
-        case Some(Left(str)) => choice.stringMap.get(str) match {
-          case Some(routes1) =>
-            choice.copy(stringMap = choice.stringMap +
-                                    (str -> (step ++ routes1)))
-          case None =>
-            choice.copy(stringMap = choice.stringMap + (str -> step))
+      case _choice: Choice[_, _] =>
+        val choice = _choice.asInstanceOf[Choice[Req, Resp1]]
+        prefix.headOption match {
+          case Some(Left(str)) => choice.stringMap.get(str) match {
+            case Some(routes1) =>
+              choice.copy(stringMap = choice.stringMap +
+                                      (str -> (step ++ routes1)))
+            case None =>
+              choice.copy(stringMap = choice.stringMap + (str -> step))
+          }
+          case Some(Right(pat)) => choice.patternMap.get(pat) match {
+            case Some(routes1) =>
+              choice.copy(
+                patternMap = choice.patternMap + (pat -> (step ++ routes1)),
+                patternSeq = choice.patternSeq :+ (pat -> step))
+            case None =>
+              val pair = pat -> step
+              choice.copy(patternMap = choice.patternMap + pair,
+                          patternSeq = choice.patternSeq :+ pair)
+          }
+          case None => end.spec.rest match {
+            case Some(pat) =>
+              choice.restMap.get(pat).foreach { end1 =>
+                if (!end.isGuarded)
+                  throw new RouteOvershadowedException(end1, end)
+              }
+              val pair = pat -> end
+              choice.copy(restMap = choice.restMap + pair,
+                          restSeq = choice.restSeq :+ pair)
+            case None =>
+              choice.ends.lastOption.foreach { end1 =>
+                if (!end.isGuarded)
+                  throw new RouteOvershadowedException(end1, end)
+              }
+              choice.copy(ends = choice.ends :+ end)
+          }
         }
-        case Some(Right(pat)) => choice.patternMap.get(pat) match {
-          case Some(routes1) =>
-            choice.copy(
-              patternMap = choice.patternMap + (pat -> (step ++ routes1)),
-              patternSeq = choice.patternSeq :+ (pat -> step))
-          case None =>
-            val pair = pat -> step
-            choice.copy(patternMap = choice.patternMap + pair,
-                        patternSeq = choice.patternSeq :+ pair)
-        }
-        case None => end.spec.rest match {
-          case Some(pat) =>
-            choice.restMap.get(pat).foreach { end1 =>
-              if (!end.isGuarded)
-                throw new RouteOvershadowedException(end1, end)
-            }
-            val pair = pat -> end
-            choice.copy(restMap = choice.restMap + pair,
-                        restSeq = choice.restSeq :+ pair)
-          case None =>
-            choice.ends.lastOption.foreach { end1 =>
-              if (!end.isGuarded)
-                throw new RouteOvershadowedException(end1, end)
-            }
-            choice.copy(ends = choice.ends :+ end)
-        }
-      }
     }
     protected[routineer] def apply(evaluator: PatternEvaluator,
                                    path: Path, args: Seq[Any]) =
@@ -483,7 +488,7 @@ object Routes {
     def step = Straight(prefix.tail, end)
   }
 
-  final case class Choice[Req, Resp](
+  final case class Choice[Req, +Resp](
                      stringMap: Map[String, Routes[Req, Resp]] =
                        Map.empty[String, Routes[Req, Resp]],
                      patternMap: Map[Pattern[String, _], Routes[Req, Resp]] =
@@ -496,10 +501,10 @@ object Routes {
                        Vector.empty[(Pattern[String, _], Route[Req, Resp])],
                      ends: Seq[Route[Req, Resp]] = Vector.empty)
                    extends NonEmpty[Req, Resp] {
-    def ++(routes1: Routes[Req, Resp]) = routes1 match {
+    def ++[Resp1 >: Resp](routes1: Routes[Req, Resp1]) = routes1 match {
       case _: Empty[_, _] => this
       case route: Route[_, _] =>
-        this ++ route.asInstanceOf[Route[Req, Resp]].straight
+        this ++ route.asInstanceOf[Route[Req, Resp1]].straight
       case Prefixed(prefix1, routes1) => stringMap.get(prefix1) match {
         case Some(routes) =>
           copy(stringMap = stringMap + (prefix1 -> (routes ++ routes1)))
@@ -540,15 +545,21 @@ object Routes {
             copy(ends = ends :+ end1)
         }
       }
-      case choice: Choice[_, _] =>
-        val newStringMap = choice.stringMap.foldLeft(stringMap) {
-          case (m, (str1, routes1)) => m.get(str1) match {
-            case Some(routes) => m + (str1 -> (routes ++ routes1))
-            case None => m + (str1 -> routes1)
+      case _choice: Choice[_, _] =>
+        val choice = _choice.asInstanceOf[Choice[Req, Resp1]]
+        val newStringMap =
+          choice.stringMap.
+              foldLeft(stringMap: Map[String, Routes[Req, Resp1]]) {
+            case (m, (str1, routes1)) => m.get(str1) match {
+              case Some(routes) => m + (str1 -> (routes ++ routes1))
+              case None => m + (str1 -> routes1)
+            }
           }
-        }
         val (newPatternMap, newPatternSeq) =
-          choice.patternSeq.foldLeft((patternMap, patternSeq)) {
+          choice.patternSeq.
+              foldLeft((patternMap: Map[Pattern[String, _], Routes[Req, Resp1]],
+                        patternSeq: Seq[(Pattern[String, _],
+                                         Routes[Req, Resp1])])) {
             case ((m, s), (pat1, routes1)) => m.get(pat1) match {
               case Some(routes) =>
                 (m + (pat1 -> (routes ++ routes1)), s :+ (pat1 -> routes1))
@@ -557,7 +568,10 @@ object Routes {
             }
           }
         val (newRestMap, newRestSeq) =
-          choice.restSeq.foldLeft((restMap, restSeq)) {
+          choice.restSeq.
+              foldLeft((restMap: Map[Pattern[String, _], Route[Req, Resp1]],
+                        restSeq: Seq[(Pattern[String, _],
+                                      Route[Req, Resp1])])) {
             case ((m, s), (pat1, end1)) =>
               m.get(pat1).foreach { end =>
                 if (!end.isGuarded)
