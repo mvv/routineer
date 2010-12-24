@@ -131,31 +131,31 @@ object Routes {
     } else if (size == 3) {
       var tail = seq
       val _3 = tail.head
-      tail = seq.tail
+      tail = tail.tail
       val _2 = tail.head
-      tail = seq.tail
+      tail = tail.tail
       val _1 = tail.head
       (_1, _2, _3)
     } else if (size == 4) {
       var tail = seq
       val _4 = tail.head
-      tail = seq.tail
+      tail = tail.tail
       val _3 = tail.head
-      tail = seq.tail
+      tail = tail.tail
       val _2 = tail.head
-      tail = seq.tail
+      tail = tail.tail
       val _1 = tail.head
       (_1, _2, _3, _4)
     } else if (size == 5) {
       var tail = seq
       val _5 = tail.head
-      tail = seq.tail
+      tail = tail.tail
       val _4 = tail.head
-      tail = seq.tail
+      tail = tail.tail
       val _3 = tail.head
-      tail = seq.tail
+      tail = tail.tail
       val _2 = tail.head
-      tail = seq.tail
+      tail = tail.tail
       val _1 = tail.head
       (_1, _2, _3, _4, _5)
     }
