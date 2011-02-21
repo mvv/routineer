@@ -1,0 +1,8 @@
+First release of my DSL for HTTP routes. There is no documentation ATM, look at the
+[example](https://github.com/mvv/routineer/blob/master/examples/servlet/src/main/scala/com/github/mvv/routineer/examples/servlet/ExampleServlet.scala).
+Here is a small snippet to grab your attention:
+
+	get(* /> (IntP >>> PositiveP[Int])).onlyIf { (_, str, len) => str.length <= len } { (req, str, len) =>
+	  "string \"%s\" has length <= %d" format(str, len)
+	}
+

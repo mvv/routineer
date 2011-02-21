@@ -6,6 +6,7 @@ trait CommonProject extends BasicScalaProject {
 }
 
 class RoutineerProject(info: ProjectInfo) extends DefaultProject(info)
+                                             with posterous.Publish
                                              with CommonProject { routineer =>
   trait SubProject extends BasicScalaProject with CommonProject {
     override def dependencies = super.dependencies ++ Seq(routineer)
