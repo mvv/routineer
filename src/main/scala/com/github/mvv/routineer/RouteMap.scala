@@ -88,7 +88,8 @@ object DeclRouteMap {
                           map: DeclRouteMap[K, Req, Resp],
                           key: K, spec: PathSpec[Elems]) {
     def apply[R](body: Elems#Prepend[Req]#Func[R])(
-                 implicit ops: PathSpec.ElemsOps[Elems],
+                 implicit hasNext: Elems#HasNext =:= PathSpec.TTrue,
+                          ops: PathSpec.ElemsOps[Elems],
                           prepOps: PathSpec.ElemsOps[Elems#Prepend[Req]],
                           conv: R => Resp) =
       addRoute(map, key, spec when prepOps.andThen(body, conv))
@@ -102,7 +103,8 @@ object DeclRouteMap {
                           spec: PathSpec[Elems],
                           cond: Elems#Prepend[Req]#Func[Boolean]) {
     def apply[R](body: Elems#Prepend[Req]#Func[R])(
-                 implicit ops: PathSpec.ElemsOps[Elems],
+                 implicit hasNext: Elems#HasNext =:= PathSpec.TTrue,
+                          ops: PathSpec.ElemsOps[Elems],
                           prepOps: PathSpec.ElemsOps[Elems#Prepend[Req]],
                           conv: R => Resp) =
       addRoute(map, key, spec onlyIf cond when prepOps.andThen(body, conv))
@@ -112,7 +114,9 @@ object DeclRouteMap {
                           spec: PathSpec[Elems],
                           guard: Elems#Prepend[Req]#Func[Option[G]]) {
     def apply[R](body: Elems#Prepend[Req]#Append[G]#Func[R])(
-                 implicit op: PathSpec.ElemsOps[Elems],
+                 implicit hasNext: Elems#Prepend[Req]#HasNext =:=
+                                   PathSpec.TTrue,
+                          ops: PathSpec.ElemsOps[Elems],
                           prepOps: PathSpec.ElemsOps[Elems#Prepend[Req]],
                           prepApOps: PathSpec.ElemsOps[
                                        Elems#Prepend[Req]#Append[G]],

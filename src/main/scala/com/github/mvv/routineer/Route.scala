@@ -66,7 +66,8 @@ sealed trait Route[Req, +Resp] extends Routes.NonEmpty[Req, Resp] {
 final case class SimpleRoute[Req, +Resp, Elems <: PathSpec.Elems](
                    spec: PathSpec[Elems],
                    body: Elems#Prepend[Req]#Func[Resp])(
-                   implicit ops: PathSpec.ElemsOps[Elems#Prepend[Req]])
+                   implicit hasNext: Elems#HasNext =:= PathSpec.TTrue,
+                            ops: PathSpec.ElemsOps[Elems#Prepend[Req]])
                  extends Route[Req, Resp] {
   type RouteElems = Elems
   def isGuarded = false
@@ -77,7 +78,8 @@ final case class CondRoute[Req, +Resp, Elems <: PathSpec.Elems](
                    spec: PathSpec[Elems],
                    cond: Elems#Prepend[Req]#Func[Boolean],
                    body: Elems#Prepend[Req]#Func[Resp])(
-                   implicit ops: PathSpec.ElemsOps[Elems#Prepend[Req]])
+                   implicit hasNext: Elems#HasNext =:= PathSpec.TTrue,
+                            ops: PathSpec.ElemsOps[Elems#Prepend[Req]])
                  extends Route[Req, Resp] {
   type RouteElems = Elems
   def isGuarded = true
@@ -92,7 +94,9 @@ final case class GuardedRoute[Req, +Resp, Elems <: PathSpec.Elems, G](
                    spec: PathSpec[Elems],
                    guard: Elems#Prepend[Req]#Func[Option[G]],
                    body: Elems#Prepend[Req]#Append[G]#Func[Resp])(
-                   implicit prepOps: PathSpec.ElemsOps[Elems#Prepend[Req]],
+                   implicit hasNext: Elems#Prepend[Req]#HasNext =:=
+                                     PathSpec.TTrue,
+                            prepOps: PathSpec.ElemsOps[Elems#Prepend[Req]],
                             prepApOps: PathSpec.ElemsOps[
                                          Elems#Prepend[Req]#Append[G]])
                  extends Route[Req, Resp] {
