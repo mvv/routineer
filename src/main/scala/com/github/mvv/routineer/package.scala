@@ -24,4 +24,9 @@ trait RoutineerImplicits {
                    Vector.empty)
 }
 
-object `package` extends RoutineerImplicits
+object `package` extends RoutineerImplicits {
+  @inline
+  def pat[I, O](f: I => Option[O]) = Pattern.Lifted(f)
+  @inline
+  def conv[I, O](f: I => O) = Pattern.Conv(f)
+}

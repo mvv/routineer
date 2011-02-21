@@ -49,7 +49,7 @@ object EchoHandler extends Handler {
 }
 
 object CondHandler extends Handler {
-  get(* /> (IntP >>> Positive[Int]))
+  get(* /> (IntP >>> PositiveP[Int]))
       .onlyIf { (_, str, len) => str.length <= len } { (rr, str, len) =>
     output(rr._2, "string \"%s\" has length <= %d" format(str, len))
   }
