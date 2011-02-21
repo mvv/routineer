@@ -19,9 +19,10 @@ package com.github.mvv.routineer.tests
 import com.github.mvv.routineer._
 import org.specs._
 
-class AppendTest extends SpecificationWithJUnit {
+object AppendSpec extends Specification {
   "Appending a route to itself must raise error" in {
      val rs = Routes[Any, Any](PathSpec.empty when (r => r))
      (rs ++ rs) must throwAn[RouteOvershadowedException[_, _]]
   }
 }
+

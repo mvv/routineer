@@ -20,7 +20,7 @@ import scala.util.matching.Regex
 
 trait Pattern[-I, O] {
   def matches(in: I): Option[O]
-  final def >>[O1](pattern: Pattern[O, O1]) = Pattern.Chain(this, pattern)
+  final def >>>[O1](pattern: Pattern[O, O1]) = Pattern.Chain(this, pattern)
 }
 object Pattern {
   final case class Chain[-I, O, O1](

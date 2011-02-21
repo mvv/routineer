@@ -19,7 +19,7 @@ package com.github.mvv.routineer.tests
 import com.github.mvv.routineer._
 import org.specs._
 
-class SimpleTest extends SpecificationWithJUnit {
+object SimpleSpec extends Specification {
   "Empty route set" in {
     val rs = Routes[Any, Any]()
     rs((), "") must_== None
