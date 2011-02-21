@@ -28,6 +28,10 @@ package object `package` {
       def append(rs1: Routes[Req, Resp], rs2: => Routes[Req, Resp]) =
         rs1 ++ rs2
     }
+  implicit def routineerRouteMapZero[K, Req, Resp] =
+    new Zero[RouteMap[K, Req, Resp]] {
+      val zero = RouteMap.empty[K, Req, Resp]
+    }
   implicit def routineerRouteMapSemigroup[K, Req, Resp] =
     new Semigroup[RouteMap[K, Req, Resp]] {
       def append(rs1: RouteMap[K, Req, Resp], rs2: => RouteMap[K, Req, Resp]) =

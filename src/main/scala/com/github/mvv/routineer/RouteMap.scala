@@ -59,6 +59,7 @@ object RouteMap {
     def apply[K, Req, Resp](routes: Map[K, Routes[Req, Resp]]) =
       new MapBacked(routes)
   }
+  def empty[K, Req, Resp]: RouteMap[K, Req, Resp] = MapBacked(Map.empty)
 }
 
 trait DeclRouteMap[K, Req, Resp] extends RouteMap[K, Req, Resp] {
