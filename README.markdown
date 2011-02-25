@@ -26,5 +26,5 @@ Usage
 -----
 
 There is no documentation at the moment, look at the
-[example](https://github.com/mvv/routineer/blob/master/examples/servlet/src/main/scala/com/github/mvv/routineer/examples/servlet/ExampleServlet.scala)
+[example](https://github.com/mvv/routineer/blob/master/examples/servlet/src/ExampleServlet.scala)
 
