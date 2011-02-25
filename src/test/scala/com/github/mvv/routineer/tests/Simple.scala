@@ -74,4 +74,33 @@ object SimpleSpec extends Specification {
     rs4((), "/aaaa") must_== None
     rs4((), "/aaaa/b").map(_.apply) must_== Some("aaaa")
   }
+
+  "Maximum path spec length" in {
+    val rs0 = Routes[Any, String](PathSpec.empty when (_ => ""))
+    rs0((), "").map(_.apply) must_== Some("")
+    val rs1 = Routes(* when ((_: Any, s1) => s1))
+    rs1((), "a").map(_.apply) must_== Some("a")
+    val rs2 = Routes(* /> * when ((_: Any, s1, s2) => s1 + s2))
+    rs2((), "a/b").map(_.apply) must_== Some("ab")
+    val rs3 = Routes(* /> * /> * when ((_: Any, s1, s2, s3) => s1 + s2 + s3))
+    rs3((), "a/b/c").map(_.apply) must_== Some("abc")
+    val rs4 = Routes(* /> * /> * /> * when {
+                       (_: Any, s1, s2, s3, s4) => s1 + s2 + s3 + s4
+                     })
+    rs4((), "a/b/c/d").map(_.apply) must_== Some("abcd")
+    val rs5 = Routes(* /> * /> * /> * /> * when {
+                       (_: Any, s1, s2, s3, s4, s5) => s1 + s2 + s3 + s4 + s5
+                     })
+    rs5((), "a/b/c/d/e").map(_.apply) must_== Some("abcde")
+    val rs6 = Routes(* /> * /> * /> * /> * /> * when {
+                       (_: Any, s1, s2, s3, s4, s5, s6) =>
+                         s1 + s2 + s3 + s4 + s5 + s6
+                     })
+    rs6((), "a/b/c/d/e/f").map(_.apply) must_== Some("abcdef")
+    val rs7 = Routes(* /> * /> * /> * /> * /> * /> * when {
+                       (_: Any, s1, s2, s3, s4, s5, s6, s7) =>
+                         s1 + s2 + s3 + s4 + s5 + s6 + s7
+                     })
+    rs7((), "a/b/c/d/e/f/g").map(_.apply) must_== Some("abcdefg")
+  }
 }

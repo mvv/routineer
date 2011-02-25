@@ -162,6 +162,54 @@ object Routes {
       tail = tail.tail
       val _1 = tail.head
       (_1, _2, _3, _4, _5)
+    } else if (size == 6) {
+      var tail = seq
+      val _6 = tail.head
+      tail = tail.tail
+      val _5 = tail.head
+      tail = tail.tail
+      val _4 = tail.head
+      tail = tail.tail
+      val _3 = tail.head
+      tail = tail.tail
+      val _2 = tail.head
+      tail = tail.tail
+      val _1 = tail.head
+      (_1, _2, _3, _4, _5, _6)
+    } else if (size == 7) {
+      var tail = seq
+      val _7 = tail.head
+      tail = tail.tail
+      val _6 = tail.head
+      tail = tail.tail
+      val _5 = tail.head
+      tail = tail.tail
+      val _4 = tail.head
+      tail = tail.tail
+      val _3 = tail.head
+      tail = tail.tail
+      val _2 = tail.head
+      tail = tail.tail
+      val _1 = tail.head
+      (_1, _2, _3, _4, _5, _6, _7)
+    } else if (size == 8) {
+      var tail = seq
+      val _8 = tail.head
+      tail = tail.tail
+      val _7 = tail.head
+      tail = tail.tail
+      val _6 = tail.head
+      tail = tail.tail
+      val _5 = tail.head
+      tail = tail.tail
+      val _4 = tail.head
+      tail = tail.tail
+      val _3 = tail.head
+      tail = tail.tail
+      val _2 = tail.head
+      tail = tail.tail
+      val _1 = tail.head
+      (_1, _2, _3, _4, _5, _6, _7, _8)
     }
   }
 
