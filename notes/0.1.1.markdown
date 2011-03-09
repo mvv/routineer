@@ -1,0 +1,5 @@
+Bugfix release.
+
+* Fixed calling of handlers with 6+ arguments.
+* Now available at Scala-Tools.org.
+
