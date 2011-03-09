@@ -27,7 +27,7 @@ are using Maven:
 
 Or add this line to your project file if you are using Simple Build Tool:
 
-	val routineerDep = "com.github.mvv.routineer" % "routineer" %% "0.1.1"
+	val routineerDep = "com.github.mvv.routineer" %% "routineer" % "0.1.1"
 
 ### From source
 Install [Simple Build Tool](http://code.google.com/p/simple-build-tool), run
