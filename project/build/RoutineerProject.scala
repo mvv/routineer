@@ -20,6 +20,7 @@ trait PublishProject extends BasicScalaProject with PublishLocalMavenProject {
   val publishTo = "Scala-Tools Releases Repository" at
                   "http://nexus.scala-tools.org/content/repositories/releases/"
 
+  override def packageSrcJar= defaultJarPath("-sources.jar")
   lazy val sourcesArtifact = Artifact.sources(artifactID)
   override def packageToPublishActions = super.packageToPublishActions ++
                                          Seq(packageSrc)
