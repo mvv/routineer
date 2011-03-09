@@ -15,12 +15,12 @@ Installation
 ------------
 Install [Simple Build Tool](http://code.google.com/p/simple-build-tool), run
 
-	$ sbt update publish-local
+	$ sbt update publish-local publish-local-maven
 
 If you plan to use Routineer with [Scalaz](http://code.google.com/p/scalaz),
 run
 
-	$ sbt "project routineer-scalaz" update publish-local
+	$ sbt "project routineer-scalaz" update publish-local publish-local-maven
 
 Usage
 -----
