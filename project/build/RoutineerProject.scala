@@ -76,11 +76,11 @@ class RoutineerProject(info: ProjectInfo) extends DefaultProject(info)
     realm <- Some("Sonatype Nexus Repository Manager")
     host <- Some("nexus.scala-tools.org")
     credsPath <- {
-        val path = Path.userHome / ".scala-tools.org.credentials"
+        val path = "project" / "publish.credentials"
         if (path.exists && !path.isDirectory)
           Some(path)
         else {
-          val path = "project" / "publish.credentials"
+          val path = Path.userHome / ".scala-tools.org.credentials"
           if (path.exists && !path.isDirectory)
             Some(path)
           else
