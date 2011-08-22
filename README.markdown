@@ -27,10 +27,10 @@ are using Maven:
 
 Or add this line to your build file if you are using Simple Build Tool:
 
-	libraryDependencies = "com.github.mvv.routineer" %% "routineer" % "0.1.2"
+	libraryDependencies += "com.github.mvv.routineer" %% "routineer" % "0.1.2"
 
 ### From source
-Install [Simple Build Tool](http://code.google.com/p/simple-build-tool), run
+Install [Simple Build Tool](https://github.com/harrah/xsbt), run
 
 	$ sbt update publish-local publish-local-maven
 
