@@ -23,7 +23,7 @@ object RoutineerBuild extends Build {
     unmanagedSourceDirectories in Compile <+= baseDirectory / "src",
     unmanagedSourceDirectories in Test <+= baseDirectory / "tests",
     publishArtifact in (Compile, packageDoc) := false,
-    resolvers += localMavenRepo,
+    resolvers ++= Seq(localMavenRepo, ScalaToolsSnapshots),
     publishLocalMavenConfiguration <<=
       (packagedArtifacts, deliverLocal, ivyLoggingLevel) map {
         (artifacts, _, level) => 
