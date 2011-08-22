@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010 Mikhail Vorozhtsov
+ * Copyright (C) 2010-2011 Mikhail Vorozhtsov
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -17,7 +17,7 @@
 package com.github.mvv.routineer.tests
 
 import com.github.mvv.routineer._
-import org.specs._
+import org.specs2.mutable._
 
 object SimpleSpec extends Specification {
   "Empty route set" in {

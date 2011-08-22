@@ -43,7 +43,7 @@ object RoutineerBuild extends Build {
       .settings(publishSettings: _*)
       .settings(
          libraryDependencies +=
-           "org.scala-tools.testing" %% "specs" % "1.6.8" % "test")
+           "org.specs2" %% "specs2" % "1.5" % "test")
   lazy val scalaz =
     Project("routineer-scalaz", file("scalaz"))
       .settings(buildSettings: _*)
