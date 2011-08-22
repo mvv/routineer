@@ -22,12 +22,12 @@ are using Maven:
 	<dependency>
 	  <groupId>com.github.mvv.routineer</groupId>
 	  <artifactId>routineer_YOUR-SCALA-VERSION</artifactId>
-	  <version>0.1.1</version>
+	  <version>0.1.2</version>
 	</dependency>
 
-Or add this line to your project file if you are using Simple Build Tool:
+Or add this line to your build file if you are using Simple Build Tool:
 
-	val routineerDep = "com.github.mvv.routineer" %% "routineer" % "0.1.1"
+	libraryDependencies = "com.github.mvv.routineer" %% "routineer" % "0.1.2"
 
 ### From source
 Install [Simple Build Tool](http://code.google.com/p/simple-build-tool), run

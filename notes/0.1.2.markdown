@@ -1,0 +1,6 @@
+Maintenance release.
+
+* Scala 2.9
+* SBT 0.10
+* Scalaz 6
+

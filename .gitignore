@@ -2,7 +2,6 @@
 *.swp
 *~
 project/boot
-project/publish.credentials
 lib
 lib_managed
 src_managed
