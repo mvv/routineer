@@ -17,7 +17,7 @@ object RoutineerBuild extends Build {
 
   val buildSettings = Seq(
     organization := "com.github.mvv.routineer",
-    version := "0.1.2-SNAPSHOT",
+    version := "0.1.2",
     scalaVersion := "2.9.0-1",
     crossScalaVersions := Seq("2.8.1", "2.9.0-1"),
     unmanagedSourceDirectories in Compile <+= baseDirectory / "src",
