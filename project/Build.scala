@@ -18,8 +18,8 @@ object RoutineerBuild extends Build {
   val buildSettings = Seq(
     organization := "com.github.mvv.routineer",
     version := "0.1.2",
-    scalaVersion := "2.9.0-1",
-    crossScalaVersions := Seq("2.8.1", "2.9.0-1"),
+    scalaVersion := "2.9.1",
+    crossScalaVersions := Seq("2.8.1", "2.9.1"),
     unmanagedSourceDirectories in Compile <+= baseDirectory / "src",
     unmanagedSourceDirectories in Test <+= baseDirectory / "tests",
     publishArtifact in (Compile, packageDoc) := false,
@@ -50,7 +50,7 @@ object RoutineerBuild extends Build {
       .settings(publishSettings: _*)
       .settings(
          libraryDependencies +=
-           "org.scalaz" %% "scalaz-core" % "6.0.1")
+           "org.scalaz" %% "scalaz-core" % "6.0.3")
       .dependsOn(routineer)
   lazy val examples =
     Project("routineer-examples", file("examples"))
