@@ -1,7 +1,7 @@
 import sbt._
 import Keys._
-import com.github.siasia.WebPlugin
-import WebPlugin.{webSettings, webappResources}
+import com.github.siasia.WebPlugin.webSettings
+import com.github.siasia.PluginKeys.webappResources
 
 object RoutineerBuild extends Build {
   val localMavenRepo =
@@ -20,22 +20,47 @@ object RoutineerBuild extends Build {
     version := "0.1.2",
     scalaVersion := "2.9.1",
     crossScalaVersions := Seq("2.8.1", "2.9.1"),
-    unmanagedSourceDirectories in Compile <+= baseDirectory / "src",
-    unmanagedSourceDirectories in Test <+= baseDirectory / "tests",
+    scalaSource in Compile <<= baseDirectory / "src",
+    scalaSource in Test <<= baseDirectory / "tests",
     publishArtifact in (Compile, packageDoc) := false,
-    resolvers ++= Seq(localMavenRepo, ScalaToolsSnapshots),
+    publishArtifact in Test := false,
+    resolvers += localMavenRepo,
     publishLocalMavenConfiguration <<=
-      (packagedArtifacts, deliverLocal, ivyLoggingLevel) map {
-        (artifacts, _, level) => 
-          new PublishConfiguration(None, localMavenRepo.name, artifacts, level)
+      (packagedArtifacts, deliverLocal, checksums in publishLocal,
+       ivyLoggingLevel) map {
+        (artifacts, _, chsums, level) => 
+          new PublishConfiguration(
+                None, localMavenRepo.name, artifacts, chsums, level)
       },
     publishLocalMaven <<=
       Classpaths.publishTask(publishLocalMavenConfiguration, deliverLocal))
 
   val publishSettings = Seq(
+    publishMavenStyle := true,
     publishTo := Some(
-      "Scala Tools Nexus" at
-      "http://nexus.scala-tools.org/content/repositories/releases/"))
+      "releases" at
+      "https://oss.sonatype.org/service/local/staging/deploy/maven2"),
+    pomIncludeRepository := { _ => false },
+    pomExtra := (
+      <url>http://github.com/mvv/routineer</url>
+      <licenses>
+        <license>
+          <name>Apache License, Version 2.0</name>
+          <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+          <distribution>repo</distribution>
+        </license>
+      </licenses>
+      <scm>
+        <url>git@github.com:mvv/routineer.git</url>
+        <connection>scm:git:git@github.com:mvv/routineer.git</connection>
+      </scm>
+      <developers>
+        <developer>
+          <id>mvv</id>
+          <name>Mikhail Vorozhtsov</name>
+          <url>http://github.com/mvv</url>
+        </developer>
+      </developers>))
 
   lazy val routineer =
     Project("routineer", file(".")) 
@@ -43,14 +68,14 @@ object RoutineerBuild extends Build {
       .settings(publishSettings: _*)
       .settings(
          libraryDependencies +=
-           "org.specs2" %% "specs2" % "1.5" % "test")
+           "org.specs2" %% "specs2" % "1.7.1" % "test")
   lazy val scalaz =
     Project("routineer-scalaz", file("scalaz"))
       .settings(buildSettings: _*)
       .settings(publishSettings: _*)
       .settings(
          libraryDependencies +=
-           "org.scalaz" %% "scalaz-core" % "6.0.3")
+           "org.scalaz" %% "scalaz-core" % "6.0.4")
       .dependsOn(routineer)
   lazy val examples =
     Project("routineer-examples", file("examples"))
@@ -62,10 +87,11 @@ object RoutineerBuild extends Build {
       .settings(buildSettings: _*)
       .settings(webSettings: _*)
       .settings(
-         webappResources <<= baseDirectory(d => d / "webapp"),
+         webappResources in Compile <<=
+           baseDirectory { d => Seq(d / "webapp") },
          libraryDependencies ++= Seq(
            "javax.servlet" % "servlet-api" % "2.5" % "provided",
-           "org.eclipse.jetty" % "jetty-webapp" % "7.4.5.v20110725" % "jetty"))
+           "org.eclipse.jetty" % "jetty-webapp" % "8.1.0.v20120127" % "container"))
       .dependsOn(routineer)
 }
 
