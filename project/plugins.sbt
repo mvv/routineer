@@ -1,12 +1,6 @@
-resolvers +=
-  Resolver.url(
-    "scalasbt",
-    new URL("http://scalasbt.artifactoryonline.com/scalasbt/sbt-plugin-releases"))(
-    Resolver.ivyStylePatterns)
-
-addSbtPlugin("com.jsuereth" % "xsbt-gpg-plugin" % "0.5")
+addSbtPlugin("com.typesafe.sbt" % "sbt-pgp" % "0.7")
 
 libraryDependencies <+= sbtVersion { v =>
-  "com.github.siasia" %% "xsbt-web-plugin" % (v + "-0.2.10")
+  "com.github.siasia" %% "xsbt-web-plugin" % (v + "-0.2.11.1")
 }
 
