@@ -19,9 +19,11 @@ object RoutineerBuild extends Build {
   val buildSettings = Seq(
     organization := "com.github.mvv.routineer",
     version := "0.1.2",
-    scalaVersion := "2.9.2",
+    scalaVersion := "2.10.0",
+    scalacOptions += "-deprecation",
     crossScalaVersions := Seq("2.8.1", "2.9.0", "2.9.0-1",
-                              "2.9.1", "2.9.1-1", "2.9.2"),
+                              "2.9.1", "2.9.1-1", "2.9.2",
+                              "2.10.0"),
     scalaSource in Compile <<= baseDirectory / "src",
     scalaSource in Test <<= baseDirectory / "tests",
     unmanagedSourceDirectories in Compile <<= Seq(scalaSource in Compile).join,
@@ -89,7 +91,8 @@ object RoutineerBuild extends Build {
          },
          libraryDependencies <+= scalaVersion { v =>
            val v1 = if (v.startsWith("2.8.") || v.startsWith("2.9.0")) "1.5"
-                    else "1.12.2"
+                    else if (v.startsWith("2.10")) "1.13"
+                    else "1.12.3"
            "org.specs2" %% "specs2" % v1 % "test"
          })
   lazy val scalaz =
@@ -102,6 +105,7 @@ object RoutineerBuild extends Build {
              CrossVersion.binaryMapped {
                case "2.9.0" => "2.9.0-1"
                case "2.9.1-1" => "2.9.1"
+               case "2.10.0" => "2.10.0-RC5"
                case v => v
              })
       .dependsOn(routineer)
