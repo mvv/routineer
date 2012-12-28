@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010 Mikhail Vorozhtsov
+ * Copyright (C) 2010, 2012 Mikhail Vorozhtsov
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -52,6 +52,12 @@ object Pattern {
     def matches(in: (I1, I2)) =
       first.matches(in._1).flatMap(out1 => second.matches(in._2).map((out1, _)))
   }
+
+  @inline
+  implicit def apply[I, O](f: I => Option[O]) = Pattern.Lifted(f)
+
+  @inline
+  def map[I, O](f: I => O) = Pattern.Conv(f)
 }
 
 object * extends Pattern[String, String] {

@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011 Mikhail Vorozhtsov
+ * Copyright (C) 2011, 2012 Mikhail Vorozhtsov
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -39,17 +39,17 @@ package object `package` {
     }
   implicit object routineerPatternCategory extends Category[Pattern] {
     @inline
-    def id[A] = conv(identity)
+    def id[A] = Pattern.map(identity)
     @inline
     def compose[A, B, C](f: Pattern[B, C], g: Pattern[A, B]) = g >>> f
   }
   implicit object routineerPatternArrow extends Arrow[Pattern] {
     val category = routineerPatternCategory
     @inline
-    def arrow[A, B](f: A => B) = conv(f)
+    def arrow[A, B](f: A => B) = Pattern.map(f)
     @inline
-    def first[A, B, C](pat: Pattern[A, B]) = pat *** conv(identity[C])
+    def first[A, B, C](pat: Pattern[A, B]) = pat *** Pattern.map(identity[C])
     @inline
-    def second[A, B, C](pat: Pattern[A, B]) = conv(identity[C]) *** pat
+    def second[A, B, C](pat: Pattern[A, B]) = Pattern.map(identity[C]) *** pat
   }
 }

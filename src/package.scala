@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010 Mikhail Vorozhtsov
+ * Copyright (C) 2010, 2012 Mikhail Vorozhtsov
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -22,11 +22,10 @@ trait RoutineerImplicits {
   implicit def patternToSimplePath[R](pattern: Pattern[String, R]) =
     SimplePathSpec(PathSpec.Elems1(PathSpec.Elem(Vector.empty, pattern)),
                    Vector.empty)
+  implicit def kleisliToSimplePath[R](f: String => Option[R]) =
+    SimplePathSpec(PathSpec.Elems1(PathSpec.Elem(Vector.empty, Pattern(f))),
+                   Vector.empty)
 }
 
-object `package` extends RoutineerImplicits {
-  @inline
-  def pat[I, O](f: I => Option[O]) = Pattern.Lifted(f)
-  @inline
-  def conv[I, O](f: I => O) = Pattern.Conv(f)
-}
+object `package` extends RoutineerImplicits
+
