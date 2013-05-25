@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2011, 2012 Mikhail Vorozhtsov
+ * Copyright (C) 2011-2013 Mikhail Vorozhtsov
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -20,36 +20,34 @@ import com.github.mvv.routineer._
 import _root_.scalaz._
 
 package object `package` {
-  implicit def routineerRoutesZero[Req, Resp] = new Zero[Routes[Req, Resp]] {
-    val zero = Routes.empty[Req, Resp]
-  }
-  implicit def routineerRoutesSemigroup[Req, Resp] =
-    new Semigroup[Routes[Req, Resp]] {
+  implicit def routineerRoutesMonoid[Req, Resp] =
+    new Monoid[Routes[Req, Resp]] {
+      @inline
+      def zero = Routes.empty[Req, Resp]
+      @inline
       def append(rs1: Routes[Req, Resp], rs2: => Routes[Req, Resp]) =
         rs1 ++ rs2
     }
-  implicit def routineerRouteMapZero[K, Req, Resp] =
-    new Zero[RouteMap[K, Req, Resp]] {
-      val zero = RouteMap.empty[K, Req, Resp]
-    }
-  implicit def routineerRouteMapSemigroup[K, Req, Resp] =
-    new Semigroup[RouteMap[K, Req, Resp]] {
-      def append(rs1: RouteMap[K, Req, Resp], rs2: => RouteMap[K, Req, Resp]) =
+  implicit def routineerRouteMapMonoid[K, Req, Resp] =
+    new Monoid[RouteMap[K, Req, Resp]] {
+      @inline
+      def zero = RouteMap.empty[K, Req, Resp]
+      @inline
+      def append(rs1: RouteMap[K, Req, Resp],
+                 rs2: => RouteMap[K, Req, Resp]) =
         rs1 ++ rs2
     }
-  implicit object routineerPatternCategory extends Category[Pattern] {
+  implicit object routineerPatternArrow extends Arrow[Pattern] {
     @inline
     def id[A] = Pattern.map(identity)
     @inline
     def compose[A, B, C](f: Pattern[B, C], g: Pattern[A, B]) = g >>> f
-  }
-  implicit object routineerPatternArrow extends Arrow[Pattern] {
-    val category = routineerPatternCategory
     @inline
-    def arrow[A, B](f: A => B) = Pattern.map(f)
+    def arr[A, B](f: A => B) = Pattern.map(f)
     @inline
     def first[A, B, C](pat: Pattern[A, B]) = pat *** Pattern.map(identity[C])
     @inline
-    def second[A, B, C](pat: Pattern[A, B]) = Pattern.map(identity[C]) *** pat
+    override def second[A, B, C](pat: Pattern[A, B]) =
+      Pattern.map(identity[C]) *** pat
   }
 }

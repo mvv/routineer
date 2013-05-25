@@ -19,11 +19,9 @@ object RoutineerBuild extends Build {
   val buildSettings = Seq(
     organization := "com.github.mvv.routineer",
     version := "0.1.2",
-    scalaVersion := "2.10.0",
+    scalaVersion := "2.10.2-RC1",
     scalacOptions += "-deprecation",
-    crossScalaVersions := Seq("2.8.1", "2.9.0", "2.9.0-1",
-                              "2.9.1", "2.9.1-1", "2.9.2",
-                              "2.10.0"),
+    crossScalaVersions := Seq("2.9.2", "2.9.3", "2.10.2-RC1"),
     scalaSource in Compile <<= baseDirectory / "src",
     scalaSource in Test <<= baseDirectory / "tests",
     unmanagedSourceDirectories in Compile <<= Seq(scalaSource in Compile).join,
@@ -83,16 +81,8 @@ object RoutineerBuild extends Build {
       .settings(buildSettings: _*)
       .settings(publishSettings: _*)
       .settings(
-         resolvers <++= scalaVersion {
-           case v if v.startsWith("2.8.") =>
-             Seq("sonatype-snapshots" at
-                   "http://oss.sonatype.org/content/repositories/snapshots")
-           case _ => Seq.empty
-         },
          libraryDependencies <+= scalaVersion { v =>
-           val v1 = if (v.startsWith("2.8.") || v.startsWith("2.9.0")) "1.5"
-                    else if (v.startsWith("2.10")) "1.13"
-                    else "1.12.3"
+           val v1 = if (v.startsWith("2.9.")) "1.12.4.1" else "1.14"
            "org.specs2" %% "specs2" % v1 % "test"
          })
   lazy val scalaz =
@@ -100,14 +90,7 @@ object RoutineerBuild extends Build {
       .settings(buildSettings: _*)
       .settings(publishSettings: _*)
       .settings(
-         libraryDependencies += 
-           "org.scalaz" % "scalaz-core" % "6.0.4" cross
-             CrossVersion.binaryMapped {
-               case "2.9.0" => "2.9.0-1"
-               case "2.9.1-1" => "2.9.1"
-               case "2.10.0" => "2.10.0-RC5"
-               case v => v
-             })
+         libraryDependencies += "org.scalaz" %% "scalaz-core" % "7.0.0")
       .dependsOn(routineer)
   lazy val examples =
     Project("routineer-examples", file("examples"))
