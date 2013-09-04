@@ -18,7 +18,7 @@ package com.github.mvv.routineer
 
 import scala.util.matching.Regex
 
-// Kleisli[Option] arrow with equality
+/** Kleisli arrow for `Option` with equality. */
 trait Pattern[-I, +O] {
   def matches(in: I): Option[O]
   final def >>>[I1 >: O, O1](pat: Pattern[I1, O1]) =
@@ -53,18 +53,24 @@ object Pattern {
       first.matches(in._1).flatMap(out1 => second.matches(in._2).map((out1, _)))
   }
 
+  /** Use a matching function as a [[Pattern]] */
   @inline
   implicit def apply[I, O](f: I => Option[O]) = Pattern.Lifted(f)
 
+  /** Use a function as a [[Pattern]] */
   @inline
   def map[I, O](f: I => O) = Pattern.Conv(f)
 }
 
+/** Accept-all [[Pattern]] for strings */
 object * extends Pattern[String, String] {
   def matches(in: String) = Some(in)
   override def toString = "*"
 }
 
+/** A [[Pattern]] that matches textual representations of `Int` values
+  * (using the provided radix).
+  */
 sealed class IntP(val radix: Int) extends Pattern[String, Int] {
   final def matches(in: String) =
     try {
@@ -79,6 +85,8 @@ sealed class IntP(val radix: Int) extends Pattern[String, Int] {
     case _ => false
   }
 }
+
+/** Matches `Int` values written in the decimal numeral system. */
 object IntP extends IntP(10) {
   private val MaxRadix = 36
   private val patterns =
@@ -90,16 +98,19 @@ object IntP extends IntP(10) {
   def unapply(pat: IntP) = Some(pat.radix)
 }
 
+/** Matches non-negative numeric values. */
 final case class NonNegativeP[A](implicit num: Numeric[A])
                  extends Pattern[A, A] {
   def matches(in: A) = if (num.gteq(in, num.zero)) Some(in) else None
 }
 
+/** Matches positive numeric values. */
 final case class PositiveP[A](implicit num: Numeric[A])
                  extends Pattern[A, A] {
   def matches(in: A) = if (num.gt(in, num.zero)) Some(in) else None
 }
 
+/** Use a regular expression as a [[Pattern]]. */
 final case class RegexP(regex: Regex) extends Pattern[String, Seq[String]] {
   def matches(in: String) = regex.unapplySeq(in)
 }
