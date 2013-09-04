@@ -1,5 +1,3 @@
-addSbtPlugin("com.typesafe.sbt" % "sbt-pgp" % "0.7")
+addSbtPlugin("com.typesafe.sbt" % "sbt-pgp" % "0.8")
 
-libraryDependencies += 
-  "com.github.siasia" %% "xsbt-web-plugin" % "0.12.0-0.2.11.1"
-
+addSbtPlugin("com.earldouglas" % "xsbt-web-plugin" % "0.4.2")

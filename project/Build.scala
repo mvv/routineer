@@ -1,7 +1,7 @@
 import sbt._
 import Keys._
-import com.github.siasia.WebPlugin.webSettings
-import com.github.siasia.PluginKeys.webappResources
+import com.earldouglas.xsbtwebplugin.WebPlugin.webSettings
+import com.earldouglas.xsbtwebplugin.PluginKeys.webappResources
 
 object RoutineerBuild extends Build {
   val localMavenRepo =
@@ -22,8 +22,8 @@ object RoutineerBuild extends Build {
     scalaVersion := "2.10.2",
     scalacOptions += "-deprecation",
     crossScalaVersions := Seq("2.9.2", "2.9.3", "2.10.2"),
-    scalaSource in Compile <<= baseDirectory / "src",
-    scalaSource in Test <<= baseDirectory / "tests",
+    scalaSource in Compile <<= baseDirectory { _ / "src" },
+    scalaSource in Test <<= baseDirectory { _ / "tests" },
     unmanagedSourceDirectories in Compile <<= Seq(scalaSource in Compile).join,
     unmanagedSourceDirectories in Test <<= Seq(scalaSource in Test).join,
     publishArtifact in Test := false,
@@ -82,7 +82,7 @@ object RoutineerBuild extends Build {
       .settings(publishSettings: _*)
       .settings(
          libraryDependencies <+= scalaVersion { v =>
-           val v1 = if (v.startsWith("2.9.")) "1.12.4.1" else "1.14"
+           val v1 = if (v.startsWith("2.9.")) "1.12.4.1" else "2.2"
            "org.specs2" %% "specs2" % v1 % "test"
          })
   lazy val scalaz =
@@ -90,7 +90,7 @@ object RoutineerBuild extends Build {
       .settings(buildSettings: _*)
       .settings(publishSettings: _*)
       .settings(
-         libraryDependencies += "org.scalaz" %% "scalaz-core" % "7.0.0")
+         libraryDependencies += "org.scalaz" %% "scalaz-core" % "7.0.3")
       .dependsOn(routineer)
   lazy val examples =
     Project("routineer-examples", file("examples"))
@@ -104,14 +104,10 @@ object RoutineerBuild extends Build {
       .settings(
          webappResources in Compile <<=
            baseDirectory { d => Seq(d / "webapp") },
-         classpathTypes += "orbit", 
          libraryDependencies ++= Seq(
            "javax.servlet" % "servlet-api" % "2.5" % "provided",
-           "org.eclipse.jetty.orbit" % "javax.servlet" %
-             "3.0.0.v201112011016" % "container"
-               artifacts Artifact("javax.servlet", "jar", "jar"),
            "org.eclipse.jetty" % "jetty-webapp" %
-             "8.1.7.v20120910" % "container"))
+             "9.0.5.v20130815" % "container"))
       .dependsOn(routineer)
 }
 
