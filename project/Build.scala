@@ -18,7 +18,7 @@ object RoutineerBuild extends Build {
 
   val buildSettings = Seq(
     organization := "com.github.mvv.routineer",
-    version := "0.1.2",
+    version := "0.2-SNAPSHOT",
     scalaVersion := "2.10.3",
     scalacOptions += "-deprecation",
     crossScalaVersions := Seq("2.9.2", "2.9.3", "2.10.3"),
