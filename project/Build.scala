@@ -19,9 +19,9 @@ object RoutineerBuild extends Build {
   val buildSettings = Seq(
     organization := "com.github.mvv.routineer",
     version := "0.1.2",
-    scalaVersion := "2.10.2",
+    scalaVersion := "2.10.3",
     scalacOptions += "-deprecation",
-    crossScalaVersions := Seq("2.9.2", "2.9.3", "2.10.2"),
+    crossScalaVersions := Seq("2.9.2", "2.9.3", "2.10.3"),
     scalaSource in Compile <<= baseDirectory { _ / "src" },
     scalaSource in Test <<= baseDirectory { _ / "tests" },
     unmanagedSourceDirectories in Compile <<= Seq(scalaSource in Compile).join,
@@ -82,7 +82,7 @@ object RoutineerBuild extends Build {
       .settings(publishSettings: _*)
       .settings(
          libraryDependencies <+= scalaVersion { v =>
-           val v1 = if (v.startsWith("2.9.")) "1.12.4.1" else "2.2"
+           val v1 = if (v.startsWith("2.9.")) "1.12.4.1" else "2.3"
            "org.specs2" %% "specs2" % v1 % "test"
          })
   lazy val scalaz =
@@ -90,7 +90,7 @@ object RoutineerBuild extends Build {
       .settings(buildSettings: _*)
       .settings(publishSettings: _*)
       .settings(
-         libraryDependencies += "org.scalaz" %% "scalaz-core" % "7.0.3")
+         libraryDependencies += "org.scalaz" %% "scalaz-core" % "7.0.4")
       .dependsOn(routineer)
   lazy val examples =
     Project("routineer-examples", file("examples"))
@@ -107,7 +107,7 @@ object RoutineerBuild extends Build {
          libraryDependencies ++= Seq(
            "javax.servlet" % "servlet-api" % "2.5" % "provided",
            "org.eclipse.jetty" % "jetty-webapp" %
-             "9.0.5.v20130815" % "container"))
+             "9.0.6.v20130930" % "container"))
       .dependsOn(routineer)
 }
 
