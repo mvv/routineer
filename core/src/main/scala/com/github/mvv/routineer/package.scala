@@ -16,16 +16,16 @@
 
 package com.github.mvv.routineer
 
+import scala.language.implicitConversions
+
+/** Essential implicit convertions. */
 trait RoutineerImplicits {
-  implicit def stringToSimplePath(str: String) =
+  implicit def stringToSimplePath(str: String): SimplePathSpec[PathSpec.Elems0] =
     SimplePathSpec(PathSpec.Elems0, Vector(str))
-  implicit def patternToSimplePath[R](pattern: Pattern[String, R]) =
-    SimplePathSpec(PathSpec.Elems1(PathSpec.Elem(Vector.empty, pattern)),
-                   Vector.empty)
-  implicit def kleisliToSimplePath[R](f: String => Option[R]) =
-    SimplePathSpec(PathSpec.Elems1(PathSpec.Elem(Vector.empty, Pattern(f))),
-                   Vector.empty)
+  implicit def patternToSimplePath[R](pattern: Pattern[String, R]) = //: SimplePathSpec[PathSpec.Elems1[R]] =
+    SimplePathSpec(PathSpec.Elems1(PathSpec.Elem(Vector.empty, pattern)), Vector.empty)
+  implicit def kleisliToSimplePath[R](f: String => Option[R]) = //: SimplePathSpec[PathSpec.Elems1[R]] =
+    SimplePathSpec(PathSpec.Elems1(PathSpec.Elem(Vector.empty, Pattern(f))), Vector.empty)
 }
 
 object `package` extends RoutineerImplicits
-

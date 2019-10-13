@@ -21,8 +21,7 @@ import org.specs2.mutable._
 
 object AppendSpec extends Specification {
   "Appending a route to itself must raise an error" in {
-     val rs = Routes[Any, Any](PathSpec.empty when (r => r))
-     (rs ++ rs) must throwAn[RouteOvershadowedException[_, _]]
+    val rs = Routes[Any, Any](PathSpec.empty when (r => r))
+    (rs ++ rs) must throwAn[RouteOvershadowedException[_, _]]
   }
 }
-

@@ -1,7 +1,0 @@
-Maintenance release. Switched to:
-
-* Scala 2.9 (2.8 artifacts are published too)
-* SBT 0.10
-* Scalaz 6
-* Specs2
-
