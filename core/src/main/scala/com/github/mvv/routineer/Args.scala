@@ -19,7 +19,7 @@ package com.github.mvv.routineer
 import scala.language.higherKinds
 
 sealed trait Args {
-  type Fn[+ _]
+  type Fn[+_]
   def through[R](f: Fn[R]): R
 
   type Prepend[H] <: Args
