@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2011 Mikhail Vorozhtsov
+ * Copyright (C) 2019 Mikhail Vorozhtsov
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,16 +14,9 @@
  * limitations under the License.
  */
 
-package com.github.mvv.routineer.tests
+package com.github.mvv.routineer
 
-import com.github.mvv.routineer._
-import org.specs2.mutable._
-
-object AppendSpec extends Specification {
-  /*
-  "Appending a route to itself must raise an error" in {
-    val rs = Routes[Any, Any](PathSpec.empty when (r => r))
-    (rs ++ rs) must throwAn[RouteOvershadowedException[_, _]]
-  }
- */
+final case class ParamValues(first: String, rest: String*) {
+  def last: String = rest.lastOption.getOrElse(first)
+  def toSeq: Seq[String] = first +: rest
 }

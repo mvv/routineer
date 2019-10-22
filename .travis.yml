@@ -1,0 +1,57 @@
+language: scala
+
+scala:
+  - 2.13.1
+
+jdk:
+  - openjdk8
+
+sudo: false
+
+cache:
+  directories:
+    - $HOME/.cache/coursier
+    - $HOME/.ivy2/cache
+    - $HOME/.sbt
+
+before_install:
+  - "test -z \"$encrypted_027c1aa97902_key\" || (openssl aes-256-cbc -K $encrypted_027c1aa97902_key -iv $encrypted_027c1aa97902_iv -in project/secrets.tar.enc -out project/secrets.tar -d && tar -xf project/secrets.tar -C project)"
+
+stages:
+  - name: lint
+  - name: test
+  - name: publish
+    if: branch = master AND type = push
+
+jobs:
+  include:
+    - stage: lint
+      name: "Check source code formatting"
+      script: sbt ++$TRAVIS_SCALA_VERSION scalafmtCheck test:scalafmtCheck scalafmtSbtCheck
+    - &test
+      stage: test
+      name: "Build and test for Scala 2.13"
+      before_script: gpg --import project/ci.asc
+      script: sbt ++$TRAVIS_SCALA_VERSION test package packageSrc publishLocal
+    - <<: *test
+      scala: 2.11.12
+      name: "Build and test for Scala 2.11"
+    - <<: *test
+      scala: 2.12.10
+      name: "Build and test for Scala 2.12"
+    - &publish
+      stage: publish
+      name: "Publish for Scala 2.13"
+      before_script: gpg --import project/ci.asc
+      script: sbt ++$TRAVIS_SCALA_VERSION sonatypeOpenIfNotSnapshot publish sonatypeReleaseIfNotSnapshot
+    - <<: *publish
+      scala: 2.11.12
+      name: "Publish for Scala 2.11"
+    - <<: *publish
+      scala: 2.12.10
+      name: "Publish for Scala 2.12"
+
+env:
+  global:
+    - secure: "YPsDlswl38JbJnvEp6R7RsLrUHfDRLRKPsgz7woYu6qPqzTrasAqHebaz8EqXcLvJhT/IK/kB/O2yFunK09DkjGpW/2pZb96WgFzLjGAfFH6I8FfJ6etn+WZRn8GqUTA1hJGZgF5fbS36S2D0zG++vSlRyprdzbowCFMHJgo8BEn+iAdPYP/LoofLYQy9if2ihTnfPsC6IhJUAZssB5jKkmbdPtT2dSG1IqAFy605O/1y6WAtALT3sC8XsvwFq4JUiqNege0T9DGhKce08JAu3yQGUDnVjjsy7fEEXKxtuqAAb/znZ28+sZAR0CJ4lROkrJ2kjKCjxDJfMgPOdSLC2MtSpDU0X+janiBs6lWu7S059HCwWko/EKm7QsxqU52QG5M/eIpRGAzeUf+fclR2MTrioO2thfbeKnBmmPnBuwYYTnhfYG//eVKVpRn6z/rveCRmKNUvQkm1HIN+FoxcQeTgZ+9Gs19uyQxRSbz1MbVQu7noOBXjH9ihAFkhUwYg6cjNRLJB4Go/tCV8+brydBOTqQEYPrTxQBpMN35upqYQpV6lNn6L/cOmccNEkIlhJwUeMleF5XBZAoXwFFoB74UHnuHs2irTip21J2HhP77LXK6EiwTI8vgAT9N6oHN0FWBLBZIV1/LEXyQ0sLXwvLf0SxiZFPhh7yUZmKKCDo="
+    - secure: "J/sC3B+Xwl/d2onBq5u+p351B/vc0zoI66TKtTJyFll07dmqxdisUGaIEqw28GIaBxUk1XnDqTfl8r18+UpJk7QgwAY5oY8YVE4AZ6/4dVkTV55lznXwUfOROvXnr0s+x2HcDoRJ9Wq7HubO8t7JQkXSvRUxas1esDOzAjCr0AtgYMbSkyUlxJYhUdc0PJNGJVcyNzC+cgoPsML8gvN1eYhTQquwM7kXQIp0Exspb4MFidApxzcg/TpadnOBt2b0EclsybTrc5u5umrqTqx7zQedIdONwuatGJyNfHyVOzG9cKjtDLcwZvHrsRiyWKyfVNP0QdTyFjsPBtKtl09t6JwsOjaRn8IRkqHpvuqZHmiN1DpMgZ+4Bu7oid7d0Kn1tgW9WoC2OmRBGLfMGEZCee4krz3hPgY2HkrIW4BhFLoEV71yaISIpATm5E2uiMk9drJr1ZmfxEeVMVRcxFyfyljvp9NEBikpwKRt5xS8YpSYx3IoYnwE2Fvg6wMnmAF2saqZZrM12gqb/Ml4OzQtw0fuIxKfVZZdq6Wc+3yplaqJlDV4IqGPEDE6Sw49eb1Vzk6M7EJ+McdaGNKTllLQtR2gxvPPzcBRbgHQtc6G5Tab6SFxjzsAs4whWGS7G58SHbLZNavrgAuGKbv5vTqrKEGdR9wcUGNsijjxkKyytA8="

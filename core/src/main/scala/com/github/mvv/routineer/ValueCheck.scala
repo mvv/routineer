@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2010-2011 Mikhail Vorozhtsov
+ * Copyright (C) 2019 Mikhail Vorozhtsov
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,16 +14,14 @@
  * limitations under the License.
  */
 
-package com.github.mvv.routineer.tests
+package com.github.mvv.routineer
 
-import com.github.mvv.routineer._
-import org.specs2.mutable._
+final case class ValueCheck[-I](pattern: ValuePattern[I, _]) {
+  def ! : ValueCheck.Force[I] = ValueCheck.Force(pattern)
+  def ~ : ValueCheck.Backtrack[I] = ValueCheck.Backtrack(pattern)
+}
 
-object AppendSpec extends Specification {
-  /*
-  "Appending a route to itself must raise an error" in {
-    val rs = Routes[Any, Any](PathSpec.empty when (r => r))
-    (rs ++ rs) must throwAn[RouteOvershadowedException[_, _]]
-  }
- */
+object ValueCheck {
+  final case class Force[-I](pattern: ValuePattern[I, _])
+  final case class Backtrack[-I](pattern: ValuePattern[I, _])
 }

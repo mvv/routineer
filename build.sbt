@@ -72,7 +72,7 @@ lazy val cats = (project in file("cats"))
   .settings(
     name := "routineer-cats",
     libraryDependencies ++=
-      Seq("org.typelevel" %% "cats-core" % "2.0.0", specs2)
+      Seq("org.typelevel" %% "cats-core" % "2.0.0" % Provided, specs2)
   )
   .dependsOn(core)
 
@@ -89,5 +89,5 @@ lazy val examplesServlet = (project in file("examples/servlet"))
   .settings(name := "routineer-examples-servlet",
             skip in publish := true,
             libraryDependencies +=
-              "javax.servlet" % "javax.servlet-api" % "3.0.1" % "provided")
+              "javax.servlet" % "javax.servlet-api" % "3.0.1" % Provided)
   .dependsOn(core)

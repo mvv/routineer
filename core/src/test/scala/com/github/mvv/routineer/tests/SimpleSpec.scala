@@ -20,6 +20,7 @@ import com.github.mvv.routineer._
 import org.specs2.mutable._
 
 object SimpleSpec extends Specification {
+  /*
   "Empty route set" in {
     val rs = Routes[Any, Any]()
     rs((), "") must_== None
@@ -101,4 +102,5 @@ object SimpleSpec extends Specification {
     })
     rs7((), "a/b/c/d/e/f/g").map(_.apply) must_== Some("abcdefg")
   }
+ */
 }

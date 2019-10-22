@@ -16,27 +16,21 @@
 
 package com.github.mvv.routineer
 
-import com.github.mvv.routineer._
 import _root_.cats.Monoid
 import _root_.cats.arrow.Arrow
 
+import scala.language.higherKinds
+
 package object cats {
-  implicit def routineerRoutesMonoid[Req, Resp]: Monoid[Routes[Req, Resp]] =
-    new Monoid[Routes[Req, Resp]] {
-      override def empty: Routes[Req, Resp] = Routes.empty[Req, Resp]
-      override def combine(rs1: Routes[Req, Resp], rs2: Routes[Req, Resp]): Routes[Req, Resp] =
-        rs1 ++ rs2
+  implicit def routineerRoutesMonoid[H[_ <: Args]]: Monoid[Routes[H]] =
+    new Monoid[Routes[H]] {
+      override def empty: Routes[H] = Routes.empty
+      override def combine(rs1: Routes[H], rs2: Routes[H]): Routes[H] = rs1 ++ rs2
     }
-  implicit def routineerRouteMapMonoid[K, Req, Resp]: Monoid[RouteMap[K, Req, Resp]] =
-    new Monoid[RouteMap[K, Req, Resp]] {
-      override def empty: RouteMap[K, Req, Resp] = RouteMap.empty[K, Req, Resp]
-      override def combine(rs1: RouteMap[K, Req, Resp], rs2: RouteMap[K, Req, Resp]): RouteMap[K, Req, Resp] =
-        rs1 ++ rs2
-    }
-  implicit object routineerPatternArrow extends Arrow[Pattern] {
-    override def lift[A, B](f: A => B): Pattern[A, B] = Pattern.map(f)
-    override def compose[A, B, C](f: Pattern[B, C], g: Pattern[A, B]): Pattern[A, C] = g >>> f
-    override def first[A, B, C](pat: Pattern[A, B]): Pattern[(A, C), (B, C)] = pat *** id[C]
-    override def second[A, B, C](pat: Pattern[A, B]): Pattern[(C, A), (C, B)] = id[C] *** pat
+  implicit object routineerValuePatternArrow extends Arrow[ValuePattern] {
+    override def lift[A, B](f: A => B): ValuePattern[A, B] = ValuePattern.map(f)
+    override def compose[A, B, C](f: ValuePattern[B, C], g: ValuePattern[A, B]): ValuePattern[A, C] = g >>> f
+    override def first[A, B, C](pattern: ValuePattern[A, B]): ValuePattern[(A, C), (B, C)] = pattern *** id[C]
+    override def second[A, B, C](pattern: ValuePattern[A, B]): ValuePattern[(C, A), (C, B)] = id[C] *** pattern
   }
 }

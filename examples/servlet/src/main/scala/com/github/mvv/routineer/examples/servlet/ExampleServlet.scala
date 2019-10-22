@@ -19,6 +19,7 @@ package com.github.mvv.routineer.examples.servlet
 import javax.servlet.http._
 import com.github.mvv.routineer._
 
+/*
 trait Handler extends DeclRouteMap[String, HttpServletRequest, String] {
   final protected def get() = routeDecl("GET", PathSpec.empty)
   final protected def get[E <: PathSpec.Elems](spec: PathSpec[E]) =
@@ -55,15 +56,19 @@ object GuardHandler extends Handler {
     "%s: string \"%s\" has %d 'a'(s)" format (req.getRequestURI, str, as)
   }
 }
+ */
 
 class ExampleServlet extends HttpServlet {
+  /*
   lazy val routes = "cond" /: {
     CondHandler ++
       GuardHandler
   } ++
     EchoHandler
+   */
 
-  override protected def service(req: HttpServletRequest, resp: HttpServletResponse): Unit =
+  override protected def service(req: HttpServletRequest, resp: HttpServletResponse): Unit = ()
+  /*
     routes(req, req.getMethod, req.getRequestURI) match {
       case Some(code) =>
         resp.setContentType("text/plain")
@@ -72,4 +77,5 @@ class ExampleServlet extends HttpServlet {
       case None =>
         resp.sendError(HttpServletResponse.SC_NOT_FOUND)
     }
+ */
 }
