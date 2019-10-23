@@ -22,6 +22,6 @@ trait QueryParser {
 
 object QueryParser {
   sealed trait GetParams
-  final case class Params(params: Map[String, ParamValues])
+  final case class Params(params: Map[String, ParamValues]) extends GetParams
   final case class Failure(error: String) extends GetParams
 }

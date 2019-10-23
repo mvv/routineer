@@ -32,6 +32,16 @@ object Args {
     def append[L](last: L): Append[L]
   }
 
+  sealed trait Same[A <: Args, B <: Args] {
+    def subst[F[_ <: Args]](f: F[A]): F[B]
+    def symm: Same[B, A]
+  }
+
+  def same[A <: Args]: Same[A, A] = new Same[A, A] {
+    override def subst[F[_ <: Args]](f: F[A]): F[A] = f
+    override def symm: Same[A, A] = this
+  }
+
   final class _0 extends Growable {
     override type Fn[+R] = () => R
     override def through[R](f: Fn[R]): R = f()
