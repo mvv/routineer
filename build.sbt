@@ -5,7 +5,7 @@ import xerial.sbt.Sonatype._
 inThisBuild(
   Seq(
     organization := "com.github.mvv.routineer",
-    version := "0.2-SNAPSHOT",
+    version := "0.2-M1",
     homepage := Some(url("https://github.com/mvv/routineer")),
     scmInfo := Some(ScmInfo(url("https://github.com/mvv/routineer"), "scm:git@github.com:mvv/routineer.git")),
     licenses := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
