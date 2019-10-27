@@ -30,7 +30,7 @@ object Dispatch {
 
   sealed trait Context
   final case class InSegment(prefix: Seq[String], segment: String) extends Context
-  final case class InSegments(prefix: Seq[String], segments: String) extends Context
-  final case class InParam(prefix: Seq[String], name: String, value: Option[String]) extends Context
+  final case class InSegments(prefix: Seq[String], segments: Seq[String]) extends Context
+  final case class InParam(prefix: Seq[String], name: String, values: Seq[String]) extends Context
   final case class InParams(prefix: Seq[String], params: Map[String, ParamValues]) extends Context
 }

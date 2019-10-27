@@ -38,6 +38,9 @@ trait RoutineerImplicits {
     RoutePattern.Root /> pattern
 }
 
-object `package` extends RoutineerImplicits {
+trait RoutineerSyntax extends RoutineerImplicits {
   val Root: RoutePattern.PartialPath[Args._0] = RoutePattern.Root
+  val * : ValuePattern[String, String] = ValuePattern.id[String]
 }
+
+object `package` extends RoutineerSyntax

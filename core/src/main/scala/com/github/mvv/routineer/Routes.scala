@@ -11,7 +11,7 @@ sealed trait Routes[+H[_ <: Args]] {
     Routes(route) ++ this
   def ++[H1[O <: Args] >: H[O]](routes: Routes[H1]): Routes[H1]
   def /:(segment: String): Routes[H]
-  def dispatch(parser: PathParser): Dispatch[H]
+  def dispatch(path: Seq[String], query: Map[String, ParamValues] = Map.empty): Dispatch[H]
 }
 
 object Routes {
@@ -19,6 +19,11 @@ object Routes {
 
   def apply[O <: Args, H[_ <: Args]](route: Route[O, H]): Routes[H] =
     NonEmpty(tracePath(route.pattern.trace, route.handler))
+
+  final class forHandler[H[_ <: Args]] {
+    def apply[O <: Args](route: Route[O, H]): Routes[H] = Routes(route)
+  }
+  def forHandler[H[_ <: Args]]: forHandler[H] = new forHandler[H]
 
   private def tracePath[I <: Args, O <: Args, H[_ <: Args]](trace: RoutePattern.PathTrace[I, O, RoutePattern.PathEnd],
                                                             handler: H[O]): PathTrace[I, H] =
@@ -70,72 +75,100 @@ object Routes {
         QueryMatched(same.symm.subst(handler))
     }
 
-  sealed private trait Alts[+A] {
-    def ++[B >: A](alts: Alts[B]): Alts[B]
+  sealed private trait Alts[+A <: Alts.Single[A]] {
+    def ++[B >: A <: Alts.Single[B]](alts: Alts[B]): Alts[B]
   }
+
   private object Alts {
-    def apply[A](head: A, last: A): NonEmpty[A] = Two(head, last)
+    def apply[A <: Single[A]](head: A, last: A): NonEmpty[A] = Two(head, last)
 
     case object Empty extends Alts[Nothing] {
-      override def ++[B >: Nothing](alts: Alts[B]): Alts[B] = alts
+      override def ++[B >: Nothing <: Single[B]](alts: Alts[B]): Alts[B] = alts
     }
 
-    sealed trait NonEmpty[+A] extends Alts[A] {
-      override def ++[B >: A](alts: Alts[B]): NonEmpty[B]
+    sealed trait NonEmpty[+A <: Single[A]] extends Alts[A] {
+      override def ++[B >: A <: Single[B]](alts: Alts[B]): NonEmpty[B]
+
       def head: A
+
       def last: A
-      def merge[B >: A](merged: Single[B], alts: NonEmpty[B]): NonEmpty[B]
+
+      def tail: Alts[A]
+
+      def merge[B >: A <: Single[B]](merged: B, alts: NonEmpty[B]): NonEmpty[B]
     }
 
-    sealed trait Single[+A] extends NonEmpty[A] { self: A =>
-      override def ++[B >: A](alts: Alts[B]): NonEmpty[B] = alts match {
+    sealed trait Single[+A <: Single[A]] extends NonEmpty[A] {
+      self: A =>
+      override def ++[B >: A <: Single[B]](alts: Alts[B]): NonEmpty[B] = alts match {
         case Empty             => this
         case single: Single[B] => Two(self, single.head)
         case two: Two[B]       => More(self, Vector(two.head), two.last)
         case more: More[B]     => More(self, more.head +: more.values, more.last)
       }
+
       override def head: A = self
+
       override def last: A = self
-      override def merge[B >: A](merged: Single[B], alts: NonEmpty[B]): NonEmpty[B] = alts match {
+
+      override def tail: Alts[A] = Empty
+
+      override def merge[B >: A <: Single[B]](merged: B, alts: NonEmpty[B]): NonEmpty[B] = alts match {
         case _: Single[B]  => merged
-        case two: Two[B]   => Two(merged.head, two.last)
-        case more: More[B] => More(merged.head, more.values, more.last)
+        case two: Two[B]   => Two(merged, two.last)
+        case more: More[B] => More(merged, more.values, more.last)
       }
     }
 
-    final private case class Two[+A](head: A, last: A) extends NonEmpty[A] {
-      override def ++[B >: A](alts: Alts[B]): NonEmpty[B] = alts match {
+    final private case class Two[+A <: Single[A]](head: A, last: A) extends NonEmpty[A] {
+      override def ++[B >: A <: Single[B]](alts: Alts[B]): NonEmpty[B] = alts match {
         case Empty             => this
         case single: Single[B] => More(head, Vector(last), single.head)
         case two: Two[B]       => More(head, Vector(last, two.head), two.last)
         case more: More[B]     => More(head, last +: more.head +: more.values, more.last)
       }
-      override def merge[B >: A](merged: Single[B], alts: NonEmpty[B]): NonEmpty[B] = alts match {
-        case _: Single[B]  => Two(head, merged.head)
-        case two: Two[B]   => More(head, Vector(merged.head), two.last)
-        case more: More[B] => More(head, merged.head +: more.values, more.last)
+
+      override def tail: Alts[A] = last
+
+      override def merge[B >: A <: Single[B]](merged: B, alts: NonEmpty[B]): NonEmpty[B] = alts match {
+        case _: Single[B]  => Two(head, merged)
+        case two: Two[B]   => More(head, Vector(merged), two.last)
+        case more: More[B] => More(head, merged +: more.values, more.last)
       }
     }
 
-    final private case class More[+A](head: A, values: Seq[A], last: A) extends NonEmpty[A] {
-      override def ++[B >: A](alts: Alts[B]): NonEmpty[B] = alts match {
+    final private case class More[+A <: Single[A]](head: A, values: Seq[A], last: A) extends NonEmpty[A] {
+      override def ++[B >: A <: Single[B]](alts: Alts[B]): NonEmpty[B] = alts match {
         case Empty             => this
         case single: Single[B] => More(head, values :+ last, single.head)
         case two: Two[B]       => More(head, values :+ last :+ two.head, two.last)
         case more: More[B]     => More(head, (values :+ last :+ more.head) ++ more.values, more.last)
       }
-      override def merge[B >: A](merged: Single[B], alts: NonEmpty[B]): NonEmpty[B] = alts match {
-        case _: Single[B]  => More(head, values, merged.head)
-        case two: Two[B]   => More(head, values :+ merged.head, two.last)
-        case more: More[B] => More(head, (values :+ merged.head) ++ more.values, more.last)
+
+      override def tail: Alts[A] = {
+        val valuesTail = values.tail
+        if (valuesTail.isEmpty) {
+          Two(values.head, last)
+        } else {
+          More(values.head, valuesTail, last)
+        }
+      }
+
+      override def merge[B >: A <: Single[B]](merged: B, alts: NonEmpty[B]): NonEmpty[B] = alts match {
+        case _: Single[B]  => More(head, values, merged)
+        case two: Two[B]   => More(head, values :+ merged, two.last)
+        case more: More[B] => More(head, (values :+ merged) ++ more.values, more.last)
       }
     }
+
   }
 
   private object Empty extends Routes[Route.NoHandler] {
     override def ++[H1[O <: Args] >: Route.NoHandler[O]](routes: Routes[H1]): Routes[H1] = routes
+
     override def /:(prefix: String): Routes[Route.NoHandler] = this
-    override def dispatch(parser: PathParser): Dispatch[NoHandler] = Dispatch.NotFound
+
+    override def dispatch(path: Seq[String], query: Map[String, ParamValues]): Dispatch[NoHandler] = Dispatch.NotFound
   }
 
   final private case class NonEmpty[+H[_ <: Args]](trace: PathTrace[Args._0, H]) extends Routes[H] {
@@ -143,8 +176,303 @@ object Routes {
       case rs: NonEmpty[H1] => NonEmpty(trace ++ rs.trace)
       case Empty            => this
     }
+
     override def /:(prefix: String): Routes[H] = NonEmpty(SegmentConst(prefix, trace))
-    final override def dispatch(parser: PathParser): Dispatch[H] = ???
+
+    override def dispatch(path: Seq[String], query: Map[String, ParamValues]): Dispatch[H] =
+      Routes.dispatch(
+        DispatchContext.Path(args = Args._0, fullPath = path, prefix = 0, path = path, query = query, trace = trace),
+        Nil
+      )
+  }
+
+  sealed private trait DispatchContext[I <: Args, +H[_ <: Args]]
+
+  private object DispatchContext {
+
+    final case class Path[I <: Args, +H[_ <: Args]](args: I,
+                                                    fullPath: Seq[String],
+                                                    prefix: Int,
+                                                    path: Seq[String],
+                                                    query: Map[String, ParamValues],
+                                                    trace: PathTrace[I, H])
+        extends DispatchContext[I, H]
+
+    final case class MorePath[I <: Args, +H[_ <: Args]](args: I,
+                                                        fullPath: Seq[String],
+                                                        prefix: Int,
+                                                        segment: String,
+                                                        segments: Seq[String],
+                                                        query: Map[String, ParamValues],
+                                                        alts: Alts[MorePathAlt[I, H]])
+        extends DispatchContext[I, H]
+
+    final case class NoMorePath[I <: Args, +H[_ <: Args]](args: I,
+                                                          fullPath: Seq[String],
+                                                          prefix: Int,
+                                                          query: Map[String, ParamValues],
+                                                          alts: Alts[NoMorePathAlt[I, H]])
+        extends DispatchContext[I, H]
+
+    final case class Query[I <: Args, +H[_ <: Args]](args: I,
+                                                     reversedPrefix: List[String],
+                                                     query: Map[String, ParamValues],
+                                                     alts: Alts[QueryAlt[I, H]])
+        extends DispatchContext[I, H]
+
+  }
+
+  /*
+  final case class DispatchState[I, +H[_ <: Args]](context: DispatchContext[I, H],
+                                                   stack: List[DispatchContext[_ <: Args, H]])
+   */
+
+  @inline
+  private def delayedDispatch[I <: Args, H[_ <: Args]](
+      context: DispatchContext[I, H],
+      stack: List[DispatchContext[_ <: Args, H]]
+  ): () => Dispatch[H] = { () =>
+    dispatch(context, stack)
+  }
+
+  // Scala 2.11 cannot handle @tailrec here
+  private def dispatch[H[_ <: Args]](context0: DispatchContext[_ <: Args, H],
+                                     stack0: List[DispatchContext[_ <: Args, H]]): Dispatch[H] = {
+    var context = context0
+    var stack = stack0
+    while (true) {
+      context match {
+        case c: DispatchContext.Path[_, H] =>
+          c.path.headOption match {
+            case Some(segment) =>
+              context = DispatchContext.MorePath(args = c.args,
+                                                 fullPath = c.fullPath,
+                                                 prefix = c.prefix,
+                                                 segment = segment,
+                                                 segments = c.path,
+                                                 query = c.query,
+                                                 alts = c.trace.path)
+            case None =>
+              context = DispatchContext.NoMorePath(args = c.args,
+                                                   fullPath = c.fullPath,
+                                                   prefix = c.prefix,
+                                                   query = c.query,
+                                                   alts = c.trace.noPath)
+          }
+        case c: DispatchContext.MorePath[_, H] =>
+          c.alts match {
+            case alts: Alts.NonEmpty[MorePathAlt[_, H]] =>
+              alts.head match {
+                case alt: SegmentConst[_, H] =>
+                  if (alt.segment == c.segment) {
+                    context = DispatchContext.Path(args = c.args,
+                                                   fullPath = c.fullPath,
+                                                   prefix = c.prefix + 1,
+                                                   path = c.segments.tail,
+                                                   query = c.query,
+                                                   trace = alt.next)
+                    stack = c.copy(alts = alts.tail) :: stack
+                  } else {
+                    context = c.copy(alts = alts.tail)
+                  }
+                case alt: SegmentConsts[_, H] =>
+                  alt.segments.get(c.segment) match {
+                    case Some(next) =>
+                      context = DispatchContext.Path(args = c.args,
+                                                     fullPath = c.fullPath,
+                                                     prefix = c.prefix + 1,
+                                                     path = c.segments.tail,
+                                                     query = c.query,
+                                                     trace = next)
+                      stack = c.copy(alts = alts.tail) :: stack
+                    case None =>
+                      context = c.copy(alts = alts.tail)
+                  }
+                case alt: SegmentCheck[_, H] =>
+                  alt.check.pattern(c.segment) match {
+                    case ValuePattern.Matched(_) =>
+                      context = DispatchContext.Path(args = c.args,
+                                                     fullPath = c.fullPath,
+                                                     prefix = c.prefix + 1,
+                                                     path = c.segments.tail,
+                                                     query = c.query,
+                                                     trace = alt.next)
+                      stack = c.copy(alts = alts.tail) :: stack
+                    case ValuePattern.NotMatched(first, rest @ _*) if alt.force =>
+                      return Dispatch.Failure(Dispatch.InSegment(c.fullPath.take(c.prefix), c.segment), first, rest: _*)
+                    case ValuePattern.NotMatched(_, _) =>
+                      context = c.copy(alts = alts.tail)
+                  }
+                case alt: SegmentPattern[_, _, H] =>
+                  alt.pattern(c.segment) match {
+                    case ValuePattern.Matched(value) =>
+                      context = DispatchContext.Path(args = alt.growable(c.args).append(value),
+                                                     fullPath = c.fullPath,
+                                                     prefix = c.prefix + 1,
+                                                     path = c.segments.tail,
+                                                     query = c.query,
+                                                     trace = alt.next)
+                      stack = c.copy(alts = alts.tail) :: stack
+                    case ValuePattern.NotMatched(first, rest @ _*) if alt.force =>
+                      return Dispatch.Failure(Dispatch.InSegment(c.fullPath.take(c.prefix), c.segment), first, rest: _*)
+                    case ValuePattern.NotMatched(_, _) =>
+                      context = c.copy(alts = alts.tail)
+                  }
+                case alt: SegmentsCheck[_, H] =>
+                  alt.check.pattern(c.segments) match {
+                    case ValuePattern.Matched(_) =>
+                      context = DispatchContext.Query(args = c.args,
+                                                      reversedPrefix = Nil,
+                                                      query = c.query,
+                                                      alts = alt.next.alts)
+                      stack = c.copy(alts = alts.tail) :: stack
+                    case ValuePattern.NotMatched(first, rest @ _*) if alt.force =>
+                      return Dispatch.Failure(Dispatch.InSegments(c.fullPath.take(c.prefix), c.segments),
+                                              first,
+                                              rest: _*)
+                    case ValuePattern.NotMatched(_, _) =>
+                      context = c.copy(alts = alts.tail)
+                  }
+                case alt: SegmentsPattern[_, _, H] =>
+                  alt.pattern(c.segments) match {
+                    case ValuePattern.Matched(value) =>
+                      context = DispatchContext.Query(args = alt.growable(c.args).append(value),
+                                                      reversedPrefix = Nil,
+                                                      query = c.query,
+                                                      alts = alt.next.alts)
+                      stack = c.copy(alts = alts.tail) :: stack
+                    case ValuePattern.NotMatched(first, rest @ _*) if alt.force =>
+                      return Dispatch.Failure(Dispatch.InSegments(c.fullPath.take(c.prefix), c.segments),
+                                              first,
+                                              rest: _*)
+                    case ValuePattern.NotMatched(_, _) =>
+                      context = c.copy(alts = alts.tail)
+                  }
+              }
+            case Alts.Empty =>
+              stack.headOption match {
+                case Some(next) =>
+                  context = next
+                  stack = stack.tail
+                case None =>
+                  return Dispatch.NotFound
+              }
+          }
+        case c: DispatchContext.NoMorePath[_, H] =>
+          c.alts match {
+            case alts: Alts.NonEmpty[NoMorePathAlt[_, H]] =>
+              alts.head match {
+                case alt: PathMatched[_, H] =>
+                  context =
+                    DispatchContext.Query(args = c.args, reversedPrefix = Nil, query = c.query, alts = alt.next.alts)
+                  stack = c.copy(alts = alts.tail) :: stack
+                case alt: SegmentsCheck[_, H] =>
+                  alt.check.pattern(Nil) match {
+                    case ValuePattern.Matched(_) =>
+                      context = DispatchContext.Query(args = c.args,
+                                                      reversedPrefix = Nil,
+                                                      query = c.query,
+                                                      alts = alt.next.alts)
+                      stack = c.copy(alts = alts.tail) :: stack
+                    case ValuePattern.NotMatched(first, rest @ _*) if alt.force =>
+                      return Dispatch.Failure(Dispatch.InSegments(c.fullPath.take(c.prefix), Nil), first, rest: _*)
+                    case ValuePattern.NotMatched(_, _) =>
+                      context = c.copy(alts = alts.tail)
+                  }
+                case alt: SegmentsPattern[_, _, H] =>
+                  alt.pattern(Nil) match {
+                    case ValuePattern.Matched(value) =>
+                      context = DispatchContext.Query(args = alt.growable(c.args).append(value),
+                                                      reversedPrefix = Nil,
+                                                      query = c.query,
+                                                      alts = alt.next.alts)
+                      stack = c.copy(alts = alts.tail) :: stack
+                    case ValuePattern.NotMatched(first, rest @ _*) if alt.force =>
+                      return Dispatch.Failure(Dispatch.InSegments(c.fullPath.take(c.prefix), Nil), first, rest: _*)
+                    case ValuePattern.NotMatched(_, _) =>
+                      context = c.copy(alts = alts.tail)
+                  }
+              }
+            case Alts.Empty =>
+              stack.headOption match {
+                case Some(next) =>
+                  context = next
+                  stack = stack.tail
+                case None =>
+                  return Dispatch.NotFound
+              }
+          }
+        case c: DispatchContext.Query[_, H] =>
+          c.alts match {
+            case alts: Alts.NonEmpty[QueryAlt[_, H]] =>
+              alts.head match {
+                case alt: QueryMatched[_, H] =>
+                  return Dispatch.Handler(c.args, alt.handler, delayedDispatch(c.copy(alts = alts.tail), stack))
+                case alt: ParamCheck[_, H] =>
+                  val values = c.query.get(alt.name).map(_.toSeq).getOrElse(Nil)
+                  alt.check.pattern(values) match {
+                    case ValuePattern.Matched(_) =>
+                      context = DispatchContext.Query(args = c.args,
+                                                      reversedPrefix = alt.name :: c.reversedPrefix,
+                                                      query = c.query - alt.name,
+                                                      alts = alt.next.alts)
+                      stack = c.copy(alts = alts.tail) :: stack
+                    case ValuePattern.NotMatched(first, rest @ _*) if alt.force =>
+                      return Dispatch.Failure(Dispatch.InParam(c.reversedPrefix.reverse, alt.name, values),
+                                              first,
+                                              rest: _*)
+                    case ValuePattern.NotMatched(_, _) =>
+                      context = c.copy(alts = alts.tail)
+                  }
+                case alt: ParamPattern[_, _, H] =>
+                  val values = c.query.get(alt.name).map(_.toSeq).getOrElse(Nil)
+                  alt.pattern(values) match {
+                    case ValuePattern.Matched(value) =>
+                      context = DispatchContext.Query(args = alt.growable(c.args).append(value),
+                                                      reversedPrefix = alt.name :: c.reversedPrefix,
+                                                      query = c.query - alt.name,
+                                                      alts = alt.next.alts)
+                      stack = c.copy(alts = alts.tail) :: stack
+                    case ValuePattern.NotMatched(first, rest @ _*) if alt.force =>
+                      return Dispatch.Failure(Dispatch.InParam(c.reversedPrefix.reverse, alt.name, values),
+                                              first,
+                                              rest: _*)
+                    case ValuePattern.NotMatched(_, _) =>
+                      context = c.copy(alts = alts.tail)
+                  }
+                case alt: ParamsCheck[_, H] =>
+                  alt.check.pattern(c.query) match {
+                    case ValuePattern.Matched(_) =>
+                      return Dispatch.Handler(c.args, alt.handler, delayedDispatch(c.copy(alts = alts.tail), stack))
+                    case ValuePattern.NotMatched(first, rest @ _*) if alt.force =>
+                      return Dispatch.Failure(Dispatch.InParams(c.reversedPrefix.reverse, c.query), first, rest: _*)
+                    case ValuePattern.NotMatched(_, _) =>
+                      context = c.copy(alts = alts.tail)
+                  }
+                case alt: ParamsPattern[_, _, H] =>
+                  alt.pattern(c.query) match {
+                    case ValuePattern.Matched(value) =>
+                      return Dispatch.Handler(alt.growable(c.args).append(value),
+                                              alt.handler,
+                                              delayedDispatch(c.copy(alts = alts.tail), stack))
+                    case ValuePattern.NotMatched(first, rest @ _*) if alt.force =>
+                      return Dispatch.Failure(Dispatch.InParams(c.reversedPrefix.reverse, c.query), first, rest: _*)
+                    case ValuePattern.NotMatched(_, _) =>
+                      context = c.copy(alts = alts.tail)
+                  }
+              }
+            case Alts.Empty =>
+              stack.headOption match {
+                case Some(next) =>
+                  context = next
+                  stack = stack.tail
+                case None =>
+                  return Dispatch.NotFound
+              }
+          }
+      }
+    }
+    throw new RuntimeException("Unreachable code")
   }
 
   sealed private trait PathTrace[I <: Args, +H[_ <: Args]] {
@@ -286,7 +614,7 @@ object Routes {
     override def combine[H1[O <: Args] >: H[O]](alt: PathAlt[I, H1]): Option[SegmentsAlt[I, H1]]
   }
 
-  final private case class SegmentsCheck[I <: Args, +H[_ <: Args]](check: ValueCheck[String],
+  final private case class SegmentsCheck[I <: Args, +H[_ <: Args]](check: ValueCheck[Seq[String]],
                                                                    force: Boolean,
                                                                    next: QueryTrace[I, H])
       extends SegmentsAlt[I, H] {
@@ -298,7 +626,7 @@ object Routes {
       }
   }
 
-  final private case class SegmentsPattern[R, I <: Args, +H[_ <: Args]](pattern: ValuePattern[String, R],
+  final private case class SegmentsPattern[R, I <: Args, +H[_ <: Args]](pattern: ValuePattern[Seq[String], R],
                                                                         force: Boolean,
                                                                         next: QueryTrace[I#Append[R], H],
                                                                         growable: I <:< I with Args.Growable)

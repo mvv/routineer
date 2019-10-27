@@ -28,6 +28,7 @@ package object cats {
       override def combine(rs1: Routes[H], rs2: Routes[H]): Routes[H] = rs1 ++ rs2
     }
   implicit object routineerValuePatternArrow extends Arrow[ValuePattern] {
+    override def id[A]: ValuePattern[A, A] = ValuePattern.id[A]
     override def lift[A, B](f: A => B): ValuePattern[A, B] = ValuePattern.map(f)
     override def compose[A, B, C](f: ValuePattern[B, C], g: ValuePattern[A, B]): ValuePattern[A, C] = g >>> f
     override def first[A, B, C](pattern: ValuePattern[A, B]): ValuePattern[(A, C), (B, C)] = pattern *** id[C]

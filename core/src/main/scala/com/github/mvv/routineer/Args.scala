@@ -42,6 +42,8 @@ object Args {
     override def symm: Same[A, A] = this
   }
 
+  def apply[A <: Args, R](f: A#Fn[R], args: A): R = args.through(f.asInstanceOf[args.Fn[R]])
+
   final class _0 extends Growable {
     override type Fn[+R] = () => R
     override def through[R](f: Fn[R]): R = f()

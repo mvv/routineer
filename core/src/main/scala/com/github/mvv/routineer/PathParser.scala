@@ -17,16 +17,12 @@
 package com.github.mvv.routineer
 
 trait PathParser {
-  def nextSegment: PathParser.NextSegment
-  def restOfPath: PathParser.RestOfPath
+  def segment: PathParser.GetSegment
 }
 
 object PathParser {
-  sealed trait NextSegment
-  final case class Segment(segment: String, parser: PathParser) extends NextSegment
-  final case class PathEnd(parser: QueryParser) extends NextSegment
-  final case class Failure(error: String) extends NextSegment with RestOfPath
-
-  sealed trait RestOfPath
-  final case class Segments(segments: String, parser: QueryParser) extends RestOfPath
+  sealed trait GetSegment
+  final case class Segment(segment: String, parser: PathParser) extends GetSegment
+  final case class PathEnd(parser: QueryParser) extends GetSegment
+  final case class Failure(error: String) extends GetSegment
 }

@@ -99,16 +99,15 @@ object ValuePattern {
 
   /** Use a function as a [[ValuePattern]] */
   def map[I, O](f: I => O): ValuePattern[I, O] = ValuePattern.Conv(f)
-}
 
-/** Accept-all [[ValuePattern]] for strings */
-object * extends ValuePattern[String, String] {
-  def apply(in: String): ValuePattern.Match[String] = ValuePattern.Matched(in)
-  override def toString = "*"
+  private val idInstance: ValuePattern[Any, Any] = { value: Any =>
+    Matched(value)
+  }
+  def id[A]: ValuePattern[A, A] = idInstance.asInstanceOf[ValuePattern[A, A]]
 }
 
 /** A [[ValuePattern]] that accepts only the provided value */
-sealed case class EqualsP[A](value: A) extends ValuePattern[A, A] {
+final case class EqualsP[A](value: A) extends ValuePattern[A, A] {
   def apply(in: A): ValuePattern.Match[A] =
     if (in == value) ValuePattern.Matched(in) else ValuePattern.NotMatched(s"Value '$in' is not equal to '$value'")
 }
@@ -116,7 +115,7 @@ sealed case class EqualsP[A](value: A) extends ValuePattern[A, A] {
 /** A [[ValuePattern]] that matches textual representations of `Int` values
   * (using the provided radix).
   */
-sealed class IntP(val radix: Int) extends ValuePattern[String, Int] {
+sealed class IntP private (val radix: Int) extends ValuePattern[String, Int] {
   final def apply(in: String): ValuePattern.Match[Int] =
     ValuePattern.Match.fromTry(Try(java.lang.Integer.parseInt(in, radix)))
   override def toString: String = s"IntP($radix)"
@@ -161,7 +160,7 @@ final case class RegexP(regex: Regex) extends ValuePattern[String, Seq[String]] 
   }
 }
 
-object MultiP extends ValuePattern[Seq[String], Seq[String]] {
+object ManyP extends ValuePattern[Seq[String], Seq[String]] {
   def apply(in: Seq[String]): ValuePattern.Match[Seq[String]] = ValuePattern.Matched(in)
 }
 

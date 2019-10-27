@@ -36,12 +36,12 @@ object RoutePattern {
       growable: I <:< I with Args.Growable
   ) extends PathTrace[I, O, E]
   final case class SegmentsCheck[I <: Args, O <: Args, +E[EI <: Args, EO <: Args] <: PathEnd[EI, EO]](
-      check: ValueCheck[String],
+      check: ValueCheck[Seq[String]],
       force: Boolean,
       next: E[I, O]
   ) extends PathTrace[I, O, E]
   final case class SegmentsPattern[A, I <: Args, O <: Args, +E[EI <: Args, EO <: Args] <: PathEnd[EI, EO]](
-      pattern: ValuePattern[String, A],
+      pattern: ValuePattern[Seq[String], A],
       force: Boolean,
       end: E[I#Append[A], O],
       growable: I <:< I with Args.Growable
@@ -105,10 +105,10 @@ object RoutePattern {
     def />[A](pattern: ValuePattern.Force[String, A])(
         implicit growable: O <:< O with Args.Growable
     ): PartialPath[O#Append[A]]
-    def /+(check: ValueCheck[String]): FullPath[O]
-    def /+(check: ValueCheck.Force[String]): FullPath[O]
-    def /+[A](check: ValuePattern[String, A])(implicit growable: O <:< O with Args.Growable): FullPath[O#Append[A]]
-    def /+[A](check: ValuePattern.Force[String, A])(
+    def /+(check: ValueCheck[Seq[String]]): FullPath[O]
+    def /+(check: ValueCheck.Force[Seq[String]]): FullPath[O]
+    def /+[A](check: ValuePattern[Seq[String], A])(implicit growable: O <:< O with Args.Growable): FullPath[O#Append[A]]
+    def /+[A](check: ValuePattern.Force[Seq[String], A])(
         implicit growable: O <:< O with Args.Growable
     ): FullPath[O#Append[A]]
   }
@@ -184,14 +184,14 @@ object RoutePattern {
         ): PathTrace[Args._0, O, E] =
           complete(SegmentPattern(pattern.pattern, true, next, growable))
       })
-    override def /+(check: ValueCheck[String]): FullPath[I] =
+    override def /+(check: ValueCheck[Seq[String]]): FullPath[I] =
       FullPathImpl(new CompletePathMatched[I] {
         override def apply[O <: Args, E[EI <: Args, EO <: Args] <: PathEnd[EI, EO]](
             end: E[I, O]
         ): PathTrace[Args._0, O, E] =
           complete(SegmentsCheck(check, false, end))
       })
-    override def /+(check: ValueCheck.Force[String]): FullPath[I] =
+    override def /+(check: ValueCheck.Force[Seq[String]]): FullPath[I] =
       FullPathImpl(new CompletePathMatched[I] {
         override def apply[O <: Args, E[EI <: Args, EO <: Args] <: PathEnd[EI, EO]](
             end: E[I, O]
@@ -199,7 +199,7 @@ object RoutePattern {
           complete(SegmentsCheck(ValueCheck(check.pattern), true, end))
       })
     override def /+[A](
-        pattern: ValuePattern[String, A]
+        pattern: ValuePattern[Seq[String], A]
     )(implicit growable: I <:< I with Args.Growable): FullPath[I#Append[A]] =
       FullPathImpl(new CompletePathMatched[I#Append[A]] {
         override def apply[O <: Args, E[EI <: Args, EO <: Args] <: PathEnd[EI, EO]](
@@ -208,7 +208,7 @@ object RoutePattern {
           complete(SegmentsPattern(pattern, false, end, growable))
       })
     override def /+[A](
-        pattern: ValuePattern.Force[String, A]
+        pattern: ValuePattern.Force[Seq[String], A]
     )(implicit growable: I <:< I with Args.Growable): FullPath[I#Append[A]] =
       FullPathImpl(new CompletePathMatched[I#Append[A]] {
         override def apply[O <: Args, E[EI <: Args, EO <: Args] <: PathEnd[EI, EO]](

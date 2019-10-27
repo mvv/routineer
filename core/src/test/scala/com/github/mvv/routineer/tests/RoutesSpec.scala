@@ -16,10 +16,31 @@
 
 package com.github.mvv.routineer.tests
 
-import com.github.mvv.routineer._
-import org.specs2.mutable._
+import com.github.mvv.routineer.{Args, Dispatch, Route, Routes}
+import com.github.mvv.routineer.syntax._
+import org.specs2.mutable.Specification
 
-object SimpleSpec extends Specification {
+class RoutesSpec extends Specification {
+  "One-segment echo route" >> {
+    val rs = Routes.forHandler[Route.Handler.Apply[String]#H](Route.handle(*) { segment =>
+      segment
+    })
+    rs.dispatch(Seq("foo")) must beLike {
+      case r: Dispatch.Handler[_, Route.Handler.Apply[String]#H] =>
+        Args.apply(r.handler, r.args) mustEqual "foo"
+    }
+  }
+
+  "One-segment echo route with env" >> {
+    val rs = Routes.forHandler[Route.WithEnv.Apply[Int, String]#H](Route.withEnv[Int](*) { (env, segment) =>
+      s"$env:$segment"
+    })
+    rs.dispatch(Seq("foo")) must beLike {
+      case r: Dispatch.Handler[_, Route.WithEnv.Apply[Int, String]#H] =>
+        Args.apply(r.handler.handler, r.handler.growable(r.args).prepend(123)) mustEqual "123:foo"
+    }
+  }
+
   /*
   "Empty route set" in {
     val rs = Routes[Any, Any]()

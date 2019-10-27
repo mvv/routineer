@@ -39,8 +39,11 @@ object Route {
     }
   }
 
-  def withEnv[E, R, O <: Args](
-      pattern: RoutePattern[O]
-  )(handler: O#Prepend[E]#Fn[R])(implicit witness: O <:< O with Args.Growable): Route[O, WithEnv.Apply[E, R]#H] =
-    Route[O, WithEnv.Apply[E, R]#H](pattern, WithEnv[E, R, O](handler, witness))
+  final class withEnvFor[E] {
+    def apply[R, O <: Args](
+        pattern: RoutePattern[O]
+    )(handler: O#Prepend[E]#Fn[R])(implicit witness: O <:< O with Args.Growable): Route[O, WithEnv.Apply[E, R]#H] =
+      Route[O, WithEnv.Apply[E, R]#H](pattern, WithEnv[E, R, O](handler, witness))
+  }
+  def withEnv[E]: withEnvFor[E] = new withEnvFor[E]
 }
