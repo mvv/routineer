@@ -29,9 +29,7 @@ lazy val sonatypeOpenIfNotSnapshot: Command = Command.command("sonatypeOpenIfNot
     log.info("Snapshot version, doing nothing")
     state
   } else {
-    val scalaVer = extracted.get(scalaBinaryVersion)
-    val projectVer = extracted.get(version)
-    Command.process(s"sonatypeOpen Sash_$scalaVer-$projectVer", state)
+    Command.process("sonatypeOpen", state)
   }
 }
 
@@ -59,6 +57,11 @@ lazy val root = (project in file("."))
     crossScalaVersions := Nil,
     skip in publish := true,
     sonatypeProfileName := "com.github.mvv",
+    sonatypeSessionName := {
+      val scalaVer = CrossVersion.binaryScalaVersion(scalaVersion.value)
+      val projectVer = version.value
+      s"Routineer_$scalaVer-$projectVer"
+    },
     commands ++= Seq(sonatypeOpenIfNotSnapshot, sonatypeReleaseIfNotSnapshot)
   )
   .aggregate(core, cats, examples)
