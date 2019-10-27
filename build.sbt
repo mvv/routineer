@@ -19,30 +19,8 @@ inThisBuild(
   )
 )
 
-ThisBuild / publishTo := sonatypePublishTo.value
+ThisBuild / publishTo := sonatypePublishToBundle.value
 ThisBuild / publishMavenStyle := true
-
-lazy val sonatypeOpenIfNotSnapshot: Command = Command.command("sonatypeOpenIfNotSnapshot") { state =>
-  val extracted = Project.extract(state)
-  if (extracted.get(isSnapshot)) {
-    val log = extracted.get(sLog)
-    log.info("Snapshot version, doing nothing")
-    state
-  } else {
-    Command.process("sonatypeOpen", state)
-  }
-}
-
-lazy val sonatypeReleaseIfNotSnapshot: Command = Command.command("sonatypeReleaseIfNotSnapshot") { state =>
-  val extracted = Project.extract(state)
-  if (extracted.get(isSnapshot)) {
-    val log = extracted.get(sLog)
-    log.info("Snapshot version, doing nothing")
-    state
-  } else {
-    Command.process("sonatypeRelease", state)
-  }
-}
 
 inThisBuild(
   Seq(
@@ -57,8 +35,7 @@ lazy val root = (project in file("."))
     crossScalaVersions := Nil,
     skip in publish := true,
     sonatypeProfileName := "com.github.mvv",
-    sonatypeSessionName := s"Routineer_${version.value}",
-    commands ++= Seq(sonatypeOpenIfNotSnapshot, sonatypeReleaseIfNotSnapshot)
+    sonatypeSessionName := s"Routineer_${version.value}"
   )
   .aggregate(core, cats, examples)
 
