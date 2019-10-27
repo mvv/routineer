@@ -41,15 +41,9 @@ jobs:
       name: "Build and test for Scala 2.12"
     - &publish
       stage: publish
-      name: "Publish for Scala 2.13"
+      name: "Publish"
       before_script: gpg --import project/ci.asc
-      script: sbt ++$TRAVIS_SCALA_VERSION sonatypeOpenIfNotSnapshot publish sonatypeReleaseIfNotSnapshot
-    - <<: *publish
-      scala: 2.11.12
-      name: "Publish for Scala 2.11"
-    - <<: *publish
-      scala: 2.12.10
-      name: "Publish for Scala 2.12"
+      script: sbt sonatypeOpenIfNotSnapshot +publish sonatypeReleaseIfNotSnapshot
 
 env:
   global:

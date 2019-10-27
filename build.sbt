@@ -5,7 +5,7 @@ import xerial.sbt.Sonatype._
 inThisBuild(
   Seq(
     organization := "com.github.mvv.routineer",
-    version := "0.2-M1",
+    version := "0.2-M2",
     homepage := Some(url("https://github.com/mvv/routineer")),
     scmInfo := Some(ScmInfo(url("https://github.com/mvv/routineer"), "scm:git@github.com:mvv/routineer.git")),
     licenses := List("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0")),
@@ -57,11 +57,7 @@ lazy val root = (project in file("."))
     crossScalaVersions := Nil,
     skip in publish := true,
     sonatypeProfileName := "com.github.mvv",
-    sonatypeSessionName := {
-      val scalaVer = CrossVersion.binaryScalaVersion(scalaVersion.value)
-      val projectVer = version.value
-      s"Routineer_$scalaVer-$projectVer"
-    },
+    sonatypeSessionName := s"Routineer_${version.value}",
     commands ++= Seq(sonatypeOpenIfNotSnapshot, sonatypeReleaseIfNotSnapshot)
   )
   .aggregate(core, cats, examples)
