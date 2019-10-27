@@ -18,7 +18,9 @@ package com.github.mvv.routineer
 
 import _root_.cats.Monoid
 import _root_.cats.arrow.Arrow
+import _root_.cats.data.{NonEmptyList, NonEmptySet}
 
+import scala.collection.immutable.SortedSet
 import scala.language.higherKinds
 
 package object cats {
@@ -33,5 +35,21 @@ package object cats {
     override def compose[A, B, C](f: ValuePattern[B, C], g: ValuePattern[A, B]): ValuePattern[A, C] = g >>> f
     override def first[A, B, C](pattern: ValuePattern[A, B]): ValuePattern[(A, C), (B, C)] = pattern *** id[C]
     override def second[A, B, C](pattern: ValuePattern[A, B]): ValuePattern[(C, A), (C, B)] = id[C] *** pattern
+  }
+
+  object NonEmptyListP extends ValuePattern[Seq[String], NonEmptyList[String]] {
+    override def apply(in: Seq[String]): ValuePattern.Match[NonEmptyList[String]] =
+      NonEmptyList.fromList(in.toList) match {
+        case Some(result) => ValuePattern.Matched(result)
+        case None         => ValuePattern.NotMatched("No value")
+      }
+  }
+
+  object NonEmptySetP extends ValuePattern[Seq[String], NonEmptySet[String]] {
+    override def apply(in: Seq[String]): ValuePattern.Match[NonEmptySet[String]] =
+      NonEmptySet.fromSet(SortedSet(in: _*)) match {
+        case Some(result) => ValuePattern.Matched(result)
+        case None         => ValuePattern.NotMatched("No value")
+      }
   }
 }

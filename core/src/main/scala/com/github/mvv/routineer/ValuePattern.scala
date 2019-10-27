@@ -108,7 +108,7 @@ object ValuePattern {
 
 /** A [[ValuePattern]] that accepts only the provided value */
 final case class EqualsP[A](value: A) extends ValuePattern[A, A] {
-  def apply(in: A): ValuePattern.Match[A] =
+  override def apply(in: A): ValuePattern.Match[A] =
     if (in == value) ValuePattern.Matched(in) else ValuePattern.NotMatched(s"Value '$in' is not equal to '$value'")
 }
 
@@ -116,7 +116,7 @@ final case class EqualsP[A](value: A) extends ValuePattern[A, A] {
   * (using the provided radix).
   */
 sealed class IntP private (val radix: Int) extends ValuePattern[String, Int] {
-  final def apply(in: String): ValuePattern.Match[Int] =
+  final override def apply(in: String): ValuePattern.Match[Int] =
     ValuePattern.Match.fromTry(Try(java.lang.Integer.parseInt(in, radix)))
   override def toString: String = s"IntP($radix)"
   override def hashCode: Int = radix
@@ -142,30 +142,37 @@ object IntP extends IntP(10) {
 
 /** Matches non-negative numeric values. */
 final case class NonNegativeP[A]()(implicit num: Numeric[A]) extends ValuePattern[A, A] {
-  def apply(in: A): ValuePattern.Match[A] =
+  override def apply(in: A): ValuePattern.Match[A] =
     if (num.gteq(in, num.zero)) ValuePattern.Matched(in) else ValuePattern.NotMatched(s"Negative value $in")
 }
 
 /** Matches positive numeric values. */
 final case class PositiveP[A]()(implicit num: Numeric[A]) extends ValuePattern[A, A] {
-  def apply(in: A): ValuePattern.Match[A] =
+  override def apply(in: A): ValuePattern.Match[A] =
     if (num.gt(in, num.zero)) ValuePattern.Matched(in) else ValuePattern.NotMatched(s"Non-positive value $in")
 }
 
 /** Use a regular expression as a [[ValuePattern]]. */
 final case class RegexP(regex: Regex) extends ValuePattern[String, Seq[String]] {
-  def apply(in: String): ValuePattern.Match[Seq[String]] = regex.unapplySeq(in) match {
+  override def apply(in: String): ValuePattern.Match[Seq[String]] = regex.unapplySeq(in) match {
     case Some(values) => ValuePattern.Matched(values)
     case None         => ValuePattern.NotMatched(s"Input '$in' does not match regex '${regex.regex}'")
   }
 }
 
 object ManyP extends ValuePattern[Seq[String], Seq[String]] {
-  def apply(in: Seq[String]): ValuePattern.Match[Seq[String]] = ValuePattern.Matched(in)
+  override def apply(in: Seq[String]): ValuePattern.Match[Seq[String]] = ValuePattern.Matched(in)
+}
+
+object NonEmptyP extends ValuePattern[Seq[String], ParamValues] {
+  override def apply(in: Seq[String]): ValuePattern.Match[ParamValues] = in.headOption match {
+    case Some(value) => ValuePattern.Matched(ParamValues(value, in.tail: _*))
+    case None        => ValuePattern.NotMatched("No value")
+  }
 }
 
 object SingleP extends ValuePattern[Seq[String], String] {
-  def apply(in: Seq[String]): ValuePattern.Match[String] = in.lastOption match {
+  override def apply(in: Seq[String]): ValuePattern.Match[String] = in.lastOption match {
     case Some(value) => ValuePattern.Matched(value)
     case None        => ValuePattern.NotMatched("No value")
   }
